@@ -1,0 +1,79 @@
+{
+  "slots": {
+    "occasion_ref": [
+      "{occasion}",
+      "this year's {occasion}",
+      "the {occasion} season",
+      "{occasion} celebrations",
+      "everyone's favourite {occasion}"
+    ],
+    "season_ref": [
+      "the {season}",
+      "{season} weather",
+      "this {season}",
+      "another {season}"
+    ],
+    "keyword_ref": [
+      "{keyword}",
+      "our {keyword}",
+      "a little something: {keyword}",
+      "{keyword} - just for you",
+      "the {keyword} everyone keeps asking about"
+    ],
+    "audience_ref": [
+      "{audience}",
+      "our {audience} community",
+      "{audience} near and far",
+      "you, our {audience}"
+    ],
+    "cta": [
+      "{cta_text}.",
+      "Don't wait - {cta_text}.",
+      "Ready when you are: {cta_text}.",
+      "See you there - {cta_text}.",
+      "{cta_text} today."
+    ]
+  },
+  "templates": [
+    {"id": "t01", "purpose": "promote", "tone": "warm", "structure": "story-opening", "text": "The first crisp {season_ref} morning always smells like possibility. This {month}, we're marking {occasion} the way we like best: with {audience_ref} and {keyword_ref}. {cta}"},
+    {"id": "t02", "purpose": "promote", "tone": "playful", "structure": "punchy", "text": "{occasion}? Sorted. Think {keyword_ref} without the fuss - made for {audience_ref} this {month}. {cta}"},
+    {"id": "t03", "purpose": "promote", "tone": "professional", "structure": "announcement", "text": "This {month} we are marking {occasion} with {keyword_ref}, prepared especially for {audience_ref}. Details are simple and the offer stands all month. {cta}"},
+    {"id": "t04", "purpose": "promote", "tone": "witty", "structure": "question-hook", "text": "What's better than {occasion} in the {season}? Exactly - {keyword_ref}. You know where to find us, {audience_ref}. {cta}"},
+    {"id": "t05", "purpose": "promote", "tone": "inspirational", "structure": "personal-note", "text": "Every {season_ref} brings a fresh start. This {month}, let {occasion} be your reason to try {keyword_ref}. Small steps, good habits, better days ahead. {cta}"},
+    {"id": "t06", "purpose": "promote", "tone": "urgent", "structure": "punchy", "text": "{occasion} starts this {month} and {keyword_ref} won't wait around. {audience_ref}, this is your nudge - you've got one good window to use it. {cta}"},
+    {"id": "t07", "purpose": "promote", "tone": "grateful", "structure": "gratitude-first", "text": "Because you keep coming back, {audience_ref}, we're making {occasion} sweeter this {month}: {keyword_ref}, offered with thanks. It's a small way to say we notice. {cta}"},
+    {"id": "t08", "purpose": "promote", "tone": "formal", "structure": "announcement", "text": "In connection with {occasion}, we are pleased to offer {keyword_ref} to {audience_ref} throughout {month}. Terms are straightforward and availability is limited. {cta}"},
+    {"id": "t09", "purpose": "promote", "tone": "professional", "structure": "story-opening", "text": "As the {season_ref} turns, {occasion} offers a natural moment to revisit what matters to {audience_ref}. This {month}, that means {keyword_ref} - built around how you actually work. {cta}"},
+    {"id": "t10", "purpose": "inform", "tone": "warm", "structure": "personal-note", "text": "A quick note from us to you, {audience_ref}: {occasion} is here, and {keyword_ref} is already on. Nothing to sign up for, just come as you are. {cta}"},
+    {"id": "t11", "purpose": "inform", "tone": "professional", "structure": "announcement", "text": "Update for {audience_ref}: ahead of {occasion} this {month}, we've put together {keyword_ref} so everything you need is in one place. {cta}"},
+    {"id": "t12", "purpose": "inform", "tone": "playful", "structure": "punchy", "text": "Hot take for {month}: {occasion} is better with {keyword_ref}. That's the whole post - short, useful, true. {audience_ref}, consider yourselves informed. {cta}"},
+    {"id": "t13", "purpose": "inform", "tone": "witty", "structure": "question-hook", "text": "Did you know {occasion} lands in {month}? Now you do - and {keyword_ref} is waiting whenever you're ready. {audience_ref}, no excuses left. {cta}"},
+    {"id": "t14", "purpose": "inform", "tone": "inspirational", "structure": "story-opening", "text": "Every season has its moment. This {season_ref}, {occasion} is ours, and {keyword_ref} is how we're marking it. Here's what's changing this {month}. {cta}"},
+    {"id": "t15", "purpose": "inform", "tone": "urgent", "structure": "announcement", "text": "Mark it down: {occasion} arrives this {month}. {audience_ref}, {keyword_ref} is ready when you are - the sooner you start, the easier it is. {cta}"},
+    {"id": "t16", "purpose": "inform", "tone": "formal", "structure": "personal-note", "text": "Dear {audience_ref}, as {occasion} approaches this {month}, we would like to share details of {keyword_ref}. The information below applies for the whole season. {cta}"},
+    {"id": "t17", "purpose": "celebrate", "tone": "playful", "structure": "punchy", "text": "{occasion} mode: ON. We're lighting up the {season_ref} with {keyword_ref} for {audience_ref} all {month}. Cake is implied. {cta}"},
+    {"id": "t18", "purpose": "celebrate", "tone": "warm", "structure": "story-opening", "text": "Every year {occasion} arrives and the {season_ref} feels a little brighter. This {month} we're celebrating with {audience_ref} - and {keyword_ref} is how you join in. {cta}"},
+    {"id": "t19", "purpose": "celebrate", "tone": "inspirational", "structure": "gratitude-first", "text": "Gratitude first. {occasion} reminds us how much {audience_ref} means to us. This {month}, {keyword_ref} is our toast to you and to everything ahead. {cta}"},
+    {"id": "t20", "purpose": "celebrate", "tone": "witty", "structure": "punchy", "text": "Plot twist: {occasion} is in {month} and {keyword_ref} is how we're throwing it. {audience_ref}, you're invited - obviously. {cta}"},
+    {"id": "t21", "purpose": "celebrate", "tone": "professional", "structure": "announcement", "text": "We are pleased to mark {occasion} this {month} with {keyword_ref}, offered to {audience_ref} as a thank-you for a strong {season_ref}. {cta}"},
+    {"id": "t22", "purpose": "celebrate", "tone": "formal", "structure": "announcement", "text": "In observance of {occasion}, {audience_ref} are invited to join us for {keyword_ref} this {month}. We would be glad to welcome you. {cta}"},
+    {"id": "t23", "purpose": "celebrate", "tone": "witty", "structure": "gratitude-first", "text": "A toast, {audience_ref}: to {occasion}, to the {season_ref}, and to {keyword_ref} - because you lot deserve it this {month}. {cta}"},
+    {"id": "t24", "purpose": "celebrate", "tone": "urgent", "structure": "punchy", "text": "{occasion} is happening now, {audience_ref}, and {keyword_ref} only lasts through {month}. Celebrate while it's live. {cta}"},
+    {"id": "t25", "purpose": "thank", "tone": "grateful", "structure": "gratitude-first", "text": "Thank you, {audience_ref}. {occasion} this {month} is brighter because of you - so {keyword_ref} is on us. We hope the {season_ref} treats you well. {cta}"},
+    {"id": "t26", "purpose": "thank", "tone": "warm", "structure": "personal-note", "text": "From our team to you, {audience_ref}: thank you for a wonderful {season_ref}. To celebrate {occasion}, enjoy {keyword_ref} this {month}. We mean it. {cta}"},
+    {"id": "t27", "purpose": "thank", "tone": "professional", "structure": "personal-note", "text": "We would like to thank {audience_ref} this {month}. As {occasion} approaches, please accept {keyword_ref} with our appreciation for your continued trust. {cta}"},
+    {"id": "t28", "purpose": "thank", "tone": "playful", "structure": "punchy", "text": "You showed up all {season_ref}, {audience_ref}. {occasion} is our excuse to say thanks - {keyword_ref} is the thank-you note, in {month} form. {cta}"},
+    {"id": "t29", "purpose": "thank", "tone": "inspirational", "structure": "gratitude-first", "text": "Behind every {month} is a community that cares. Thank you, {audience_ref} - enjoy {keyword_ref} this {occasion}. Here's to the next {season_ref} together. {cta}"},
+    {"id": "t30", "purpose": "thank", "tone": "witty", "structure": "punchy", "text": "Our thank-you speech, abridged: {audience_ref}, you're the best part of every {month}. Case in point: {keyword_ref} this {occasion}. {cta}"},
+    {"id": "t31", "purpose": "engage", "tone": "witty", "structure": "question-hook", "text": "Quick question for {audience_ref}: what does {occasion} mean to you? Tell us below - and try {keyword_ref} while you're here this {month}. {cta}"},
+    {"id": "t32", "purpose": "engage", "tone": "playful", "structure": "question-hook", "text": "{audience_ref}, we need your take. Favourite {season_ref} ritual? Drop it in the comments, then {keyword_ref} on us this {occasion}. {cta}"},
+    {"id": "t33", "purpose": "engage", "tone": "warm", "structure": "question-hook", "text": "What would {month} be without {occasion}? We'd love to hear your plans, {audience_ref}. Meanwhile {keyword_ref} is ready whenever you are. {cta}"},
+    {"id": "t34", "purpose": "engage", "tone": "professional", "structure": "announcement", "text": "We would like to hear from {audience_ref} ahead of {occasion}. Share your feedback this {month}, explore {keyword_ref}, and help us shape what comes next. {cta}"},
+    {"id": "t35", "purpose": "engage", "tone": "inspirational", "structure": "personal-note", "text": "This {season_ref}, {occasion} is a chance to connect. {audience_ref}, tell us what you're building this {month} - we read every reply. {keyword_ref} is waiting, too. {cta}"},
+    {"id": "t36", "purpose": "engage", "tone": "warm", "structure": "story-opening", "text": "It started with a conversation during the {season_ref} - and now, this {month}, we want yours. Tell us your {occasion} plans, {audience_ref}. {keyword_ref} awaits the winners. {cta}"},
+    {"id": "t37", "purpose": "announce", "tone": "professional", "structure": "announcement", "text": "Announcement: ahead of {occasion}, we are introducing {keyword_ref} for {audience_ref}, available this {month}. Everything you need to know is below. {cta}"},
+    {"id": "t38", "purpose": "announce", "tone": "formal", "structure": "announcement", "text": "Please note: in connection with {occasion}, {keyword_ref} will be available to {audience_ref} throughout {month}. Should you require further detail, we are at your disposal. {cta}"},
+    {"id": "t39", "purpose": "announce", "tone": "urgent", "structure": "punchy", "text": "New, this {month}: {keyword_ref} lands just in time for {occasion}. {audience_ref} - first to know, first to go. Don't sit on this one. {cta}"},
+    {"id": "t40", "purpose": "announce", "tone": "playful", "structure": "story-opening", "text": "It started with a simple idea during the {season_ref}... and this {month}, {occasion} brings you {keyword_ref}. {audience_ref}, the wait is officially over. {cta}"}
+  ]
+}

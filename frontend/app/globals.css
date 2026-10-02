@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- tokens (Section 12) ---- */
+:root {
+  --primary: #4f46e5;
+  --primary-700: #4338ca;
+  --primary-tint: #eef2ff;
+  --success: #059669;
+  --warning: #f59e0b;
+  --danger: #dc2626;
+  --info: #0284c7;
+  --canvas: #f8fafc;
+  --surface: #ffffff;
+  --line: #e2e8f0;
+  --ink: #0f172a;
+  --ink-2: #475569;
+  --muted: #64748b;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-canvas text-ink font-sans text-body antialiased;
+  }
+  h1 { @apply text-h1; }
+  h2 { @apply text-h2; }
+  h3 { @apply text-h3; }
+  /* visible 2px focus ring in Indigo, 2px offset (WCAG 2.1 AA) */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  table { font-variant-numeric: tabular-nums; }
+}
+
+@layer components {
+  .card {
+    @apply bg-surface border border-line rounded-card shadow-card;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-input text-body font-medium
+      transition-all duration-150 ease-out disabled:opacity-50 disabled:pointer-events-none
+      whitespace-nowrap select-none;
+  }
+  .btn-primary { @apply btn bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800; }
+  .btn-secondary { @apply btn bg-white text-ink border border-line hover:bg-canvas; }
+  .btn-ghost { @apply btn text-ink-2 hover:bg-canvas; }
+  .btn-danger { @apply btn bg-white text-danger border border-danger/40 hover:bg-danger/5; }
+  .btn-sm { @apply h-8 px-3 text-small; }
+  .input {
+    @apply w-full h-10 px-3 rounded-input border border-line bg-white text-body text-ink
+      placeholder:text-muted transition-shadow duration-150;
+  }
+  .input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+  }
+  .label { @apply block text-small text-ink-2 mb-1.5; }
+  .helper { @apply text-small text-muted font-normal mt-1; }
+  .chip {
+    @apply inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-line bg-white
+      text-small text-ink-2 cursor-pointer transition-all duration-150 hover:border-primary-200;
+  }
+  .chip-active {
+    @apply border-primary-600 bg-primary-50 text-primary-700 font-medium;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1.5 h-6 px-2.5 rounded-full text-small font-medium;
+  }
+  .nav-link {
+    @apply flex items-center gap-3 h-10 px-3 rounded-input text-body text-ink-2
+      transition-colors duration-150 hover:bg-canvas hover:text-ink;
+  }
+  .nav-link-active { @apply bg-primary-50 text-primary-700 font-medium hover:bg-primary-50 hover:text-primary-700; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

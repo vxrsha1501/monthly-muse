@@ -1,0 +1,67 @@
+# MonthlyMuse API reference
+
+Generated from the FastAPI route table (`backend/app/main.py`). Base URL: `http://localhost:8000/api/v1`. All authenticated routes expect `Authorization: Bearer <access token>`; the refresh token lives in an httpOnly cookie. Errors use the uniform envelope `{ "error": { code, message, details, request_id } }`.
+
+**61 endpoints**
+
+- `GET` `/`
+- `GET` `/api/docs`
+- `GET` `/api/openapi.json`
+- `GET` `/api/v1/admin/health`
+- `GET` `/api/v1/admin/jobs`
+- `GET` `/api/v1/analytics/content`
+- `GET` `/api/v1/analytics/quality`
+- `GET` `/api/v1/analytics/summary`
+- `GET` `/api/v1/analytics/usage`
+- `GET` `/api/v1/audiences`
+- `POST` `/api/v1/audiences`
+- `DELETE` `/api/v1/audiences/{row_id}`
+- `PATCH` `/api/v1/audiences/{row_id}`
+- `POST` `/api/v1/auth/login`
+- `POST` `/api/v1/auth/logout`
+- `POST` `/api/v1/auth/refresh`
+- `POST` `/api/v1/auth/register`
+- `GET` `/api/v1/calendar-token`
+- `GET` `/api/v1/calendar.ics`
+- `GET` `/api/v1/cycles`
+- `GET` `/api/v1/cycles/{cycle_id}`
+- `PATCH` `/api/v1/cycles/{cycle_id}`
+- `POST` `/api/v1/cycles/{cycle_id}/approve`
+- `POST` `/api/v1/cycles/{cycle_id}/generate`
+- `GET` `/api/v1/generation-requests/{request_id}`
+- `POST` `/api/v1/generation-requests/{request_id}/regenerate`
+- `DELETE` `/api/v1/me`
+- `GET` `/api/v1/me`
+- `PATCH` `/api/v1/me`
+- `GET` `/api/v1/me/export`
+- `GET` `/api/v1/me/preferences`
+- `PUT` `/api/v1/me/preferences`
+- `GET` `/api/v1/me/preferences/learned`
+- `POST` `/api/v1/me/preferences/reset-learning`
+- `GET` `/api/v1/messages`
+- `POST` `/api/v1/messages/generate`
+- `DELETE` `/api/v1/messages/{message_id}`
+- `GET` `/api/v1/messages/{message_id}`
+- `PATCH` `/api/v1/messages/{message_id}`
+- `POST` `/api/v1/messages/{message_id}/feedback`
+- `POST` `/api/v1/messages/{message_id}/reuse`
+- `POST` `/api/v1/messages/{message_id}/select`
+- `GET` `/api/v1/monthly-plans`
+- `POST` `/api/v1/monthly-plans`
+- `DELETE` `/api/v1/monthly-plans/{plan_id}`
+- `GET` `/api/v1/monthly-plans/{plan_id}`
+- `PATCH` `/api/v1/monthly-plans/{plan_id}`
+- `POST` `/api/v1/monthly-plans/{plan_id}/pause`
+- `POST` `/api/v1/monthly-plans/{plan_id}/resume`
+- `GET` `/api/v1/notifications`
+- `GET` `/api/v1/notifications/unread-count`
+- `POST` `/api/v1/notifications/{notification_id}/read`
+- `GET` `/api/v1/occasions`
+- `POST` `/api/v1/scheduled-posts/{post_id}/mark-published`
+- `POST` `/api/v1/scheduled-posts/{post_id}/metrics`
+- `GET` `/api/v1/topics`
+- `POST` `/api/v1/topics`
+- `DELETE` `/api/v1/topics/{row_id}`
+- `PATCH` `/api/v1/topics/{row_id}`
+- `GET` `/docs/oauth2-redirect`
+- `GET` `/redoc`

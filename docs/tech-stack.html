@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MonthlyMuse — Technology Stack (Detailed)</title>
+<style>
+  @page { size: A4; margin: 18mm 15mm 16mm 15mm; }
+  html { background: #FFFFFF; color-scheme: light only; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Inter, system-ui, -apple-system, sans-serif; color: #0F172A;
+         font-size: 10.5pt; line-height: 1.55; margin: 0; background: #FFFFFF; }
+  h1 { font-size: 24pt; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 14.5pt; margin: 26px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #4F46E5;
+       color: #312E81; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; color: #0F172A; page-break-after: avoid; }
+  p, li { margin: 5px 0; }
+  ul, ol { padding-left: 20px; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 9pt; background: #F1F5F9;
+         padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: "Cascadia Mono", Consolas, monospace; font-size: 8.6pt; background: #0F172A;
+        color: #E2E8F0; padding: 10px 12px; border-radius: 8px; overflow-x: hidden; white-space: pre;
+        line-height: 1.4; page-break-inside: avoid; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9pt;
+          page-break-inside: avoid; }
+  th { background: #4F46E5; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+  td { border-bottom: 1px solid #E2E8F0; padding: 5px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  .subtitle { color: #475569; font-size: 11.5pt; margin: 2px 0 14px; }
+  .meta { color: #64748B; font-size: 9pt; margin-bottom: 18px; }
+  .tag { display: inline-block; background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE;
+         border-radius: 999px; padding: 1px 9px; font-size: 8.5pt; margin-right: 5px; }
+  .arch { display: flex; flex-direction: column; gap: 6px; margin: 10px 0 14px; page-break-inside: avoid; }
+  .box { border: 1.5px solid #CBD5E1; border-left: 6px solid #4F46E5; border-radius: 8px;
+         padding: 8px 12px; background: #fff; }
+  .box b { color: #312E81; }
+  .box .sub { color: #475569; font-size: 9pt; }
+  .arrow { text-align: center; color: #94A3B8; font-size: 10pt; line-height: 1; }
+  .note { background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 7px 11px; border-radius: 0 6px 6px 0;
+          font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
+  .good { background: #ECFDF5; border-left: 4px solid #059669; padding: 7px 11px; border-radius: 0 6px 6px 0;
+          font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
+  .pb { page-break-before: always; }
+  .footer { color: #94A3B8; font-size: 8.5pt; margin-top: 24px; border-top: 1px solid #E2E8F0; padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<h1>MonthlyMuse</h1>
+<div class="subtitle">Technology Stack — detailed reference</div>
+<div class="meta">AI-Powered Automated Message Generator for Monthly Posting · companion to the Master Blueprint (Sections 13–14) · October 2026</div>
+
+<p>
+<span class="tag">FastAPI backend</span><span class="tag">Next.js 14 frontend</span>
+<span class="tag">16-table relational DB</span><span class="tag">own NumPy NLP engine</span>
+<span class="tag">APScheduler worker</span><span class="tag">62 passing tests</span>
+</p>
+
+<h2>1. Stack at a glance</h2>
+<table>
+  <tr><th style="width:14%">Layer</th><th style="width:30%">Choice (installed version)</th><th style="width:36%">Why this choice</th><th>Blueprint alternative</th></tr>
+  <tr><td>Backend framework</td><td><b>FastAPI 0.115</b> + Uvicorn 0.30</td><td>Same language as the ML code; async; automatic OpenAPI docs; Pydantic validation on every route</td><td>Flask, Django REST, Node (would split the codebase)</td></tr>
+  <tr><td>Validation / schemas</td><td><b>Pydantic 2.9</b> + pydantic-settings 2.5</td><td>Typed request/response models, env-driven config (<code>MM_</code> prefix), .env support</td><td>marshmallow, class-validator</td></tr>
+  <tr><td>ORM</td><td><b>SQLAlchemy 2.0.35</b> (declarative)</td><td>Mature, explicit control over queries; Alembic 1.13 ready for versioned schema</td><td>SQLModel, Prisma (JS)</td></tr>
+  <tr><td>Database</td><td><b>SQLite</b> default → <b>PostgreSQL 15/16 + pgvector</b> via <code>MM_DATABASE_URL</code></td><td>Zero-setup local dev; schema is identical on Postgres; vectors stored as float32 BLOBs, cosine computed in NumPy</td><td>PostgreSQL + pgvector</td></tr>
+  <tr><td>NLP preprocessing</td><td><b>Own <code>app/ai/text.py</code></b> (normalise, tokenize, lemmas, keywords, n-gram Jaccard, banned-word/CTA checks)</td><td>Zero heavy deps, deterministic, CPU-only; blueprint's spaCy/YAKE kept as an optional extra</td><td>spaCy small model + YAKE</td></tr>
+  <tr><td>Embeddings</td><td><b>Own 384-d hashing embedder</b> (default) · <code>sentence-transformers all-MiniLM-L6-v2</code> optional via <code>MM_EMBEDDER</code></td><td>Deterministic, offline, instant startup; same 384 dimensionality so every formula is unchanged; swap to MiniLM without code changes</td><td>sentence-transformers all-MiniLM-L6-v2</td></tr>
+  <tr><td>Numerical / ML</td><td><b>NumPy 1.26 + SciPy 1.15</b> (pure Python algorithms)</td><td>Matrix similarity (E·Hᵀ, E·Eᵀ), logistic-regression tone classifier, chi-square, Wilson intervals, Monte-Carlo — no GPU needed</td><td>NumPy, scikit-learn, SciPy</td></tr>
+  <tr><td>Generation (LLM)</td><td><b>Adapter layer</b>: <code>template</code> (default, offline) · OpenAI · Anthropic · Ollama — retry 1s/3s/9s + jitter, circuit breaker (5 fails/60 s), tolerant JSON parse, cost metering</td><td>One call yields six candidates; the template engine (~40 templates + slot banks) guarantees the demo works with zero API keys</td><td>Hosted small model (GPT-mini / Claude / Gemini Flash class), Ollama fallback</td></tr>
+  <tr><td>Scheduling</td><td><b>APScheduler 3.11</b> (in-process + standalone worker)</td><td>No extra infrastructure; cron 02:00 daily scan + 5-min interval; enough for hundreds of users</td><td>APScheduler; Celery + Redis when scaling</td></tr>
+  <tr><td>Email</td><td>Console backend (dev) · SMTP / Resend options (<code>MM_EMAIL_BACKEND</code>)</td><td>Free tiers, simple API; in-app notifications always stored in DB</td><td>Resend / SendGrid / SMTP (Mailhog in dev)</td></tr>
+  <tr><td>Auth</td><td><b>Argon2id</b> (argon2-cffi 25) + <b>JWT</b> (PyJWT 2.15): 15-min access + 14-day refresh httpOnly cookie; signed ICS calendar token</td><td>Stateless, standard, secure when cookie flags are right</td><td>Auth0 / Clerk / Supabase Auth</td></tr>
+  <tr><td>Frontend</td><td><b>Next.js 14.2 App Router + TypeScript 5</b>, React 18</td><td>Industry standard, typed contracts, easy deploy, static + dynamic routes</td><td>React + Vite</td></tr>
+  <tr><td>UI toolkit</td><td><b>Tailwind CSS 3.4</b> with Section-12 design tokens + own component library (<code>components/ui.tsx</code>)</td><td>Fast, polished, accessible; tokens (indigo primary, chart palette, text scale, shadows) implemented as Tailwind theme — shadcn/ui CLI dropped to keep the dependency tree auditable</td><td>Tailwind + shadcn/ui (MUI, Chakra)</td></tr>
+  <tr><td>Data fetching</td><td><b>TanStack Query 5</b></td><td>Caching, polling (generation status every 1.5 s), invalidation after feedback, error toasts</td><td>SWR</td></tr>
+  <tr><td>Forms</td><td><b>React Hook Form 7 + Zod 3</b> (<code>@hookform/resolvers</code>)</td><td>Schema-validated 3-step Create form with draft autosave</td><td>Formik</td></tr>
+  <tr><td>Charts</td><td><b>Recharts 3</b></td><td>Declarative React charts incl. radar (compare mode), scatter (PCA embedding map), donut/bars/CI bars</td><td>Chart.js, Plotly</td></tr>
+  <tr><td>Testing</td><td><b>pytest 9</b> (62 tests) · tsc + ESLint + <code>next build</code> for the frontend</td><td>Covers golden maths values, pipeline, API journey, scheduler automation</td><td>pytest, Playwright, Vitest/RTL</td></tr>
+  <tr><td>DevOps</td><td>Docker + docker-compose + <b>GitHub Actions CI</b> (backend matrix 3.10/3.11, frontend build)</td><td>Reproducible setup and automated quality gate</td><td>same</td></tr>
+  <tr><td>Monitoring</td><td>JSON structured logs (request_id), <code>/admin/jobs</code> job-run audit, <code>/admin/health</code>, per-request latency + LLM cost metrics</td><td>Cheap visibility into failures</td><td>Structured logs, Sentry, admin jobs page</td></tr>
+</table>
+
+<h2>2. Architecture (blueprint Section 13)</h2>
+<div class="arch">
+  <div class="box"><b>FRONTEND — Next.js 14 + TypeScript + Tailwind</b>
+    <div class="sub">Dashboard · Create · Review/Compare · Calendar · Plans · History · Analytics · Settings — calls only the public API; no secrets in the browser</div></div>
+  <div class="arrow">│ HTTPS / JSON — JWT access token + refresh cookie ▼</div>
+  <div class="box"><b>BACKEND API — FastAPI</b>
+    <div class="sub">[Auth + RBAC] → [Validation] → [Routers (61 endpoints)] → [Services] → [uniform error / JSON-logging layer]</div></div>
+  <div class="arrow">▼</div>
+  <div class="box" style="border-left-color:#0D9488"><b>AI / NLP PIPELINE — pure NumPy (<code>app/ai/</code>)</b>
+    <div class="sub">preprocess + keywords → context + history retrieval → Thompson-sampled style arms → LLM adapter (retry, breaker, template fallback) → 384-d embeddings → cosine similarity → features F, s = F·w → MMR top-3 → Monte-Carlo confidence → explanation payload</div></div>
+  <div class="arrow">▼</div>
+  <div class="box" style="border-left-color:#F59E0B"><b>DATABASE — SQLite (default) / PostgreSQL + pgvector</b>
+    <div class="sub">16 tables: users, user_preferences, audience_profiles, topics, occasions, monthly_plans, post_cycles, generation_requests, generated_messages, feedback_events, tone_stats, scheduled_posts, post_metrics, notifications, job_runs, analytics_daily</div></div>
+  <div class="arrow">▲</div>
+  <div class="box" style="border-left-color:#DB2777"><b>AUTOMATION — APScheduler worker</b>
+    <div class="sub">daily cycle scan → enqueue generation → notify → T-3/T-1 reminders → catch-up → plan extension · job_runs audit</div></div>
+</div>
+<p>
+Statelessness rule from the blueprint is respected: the API holds no in-memory user state, so it can run
+behind several instances; the worker shares the same code and database but starts with a different command
+(<code>python -m app.scheduler.runner</code>).
+</p>
+
+<h2 class="pb">3. Backend in detail</h2>
+<h3>3.1 Runtime & structure</h3>
+<pre>backend/app/
+├── api/        auth, users, catalog, plans, cycles, messages, analytics, misc  (61 routes)
+├── core/       config.py (MM_ env), errors.py, security.py, logging.py, rate_limit.py, runtime.py
+├── db/         session.py (engine, UTCDateTime, blob&lt;-&gt;vector helpers), models.py (16 tables)
+├── schemas/    Pydantic request/response models
+├── ai/         text, embedder, similarity, features, scoring, mmr, confidence, arms,
+│               tone, llm_adapters, prompt, templates, limits, pipeline, personalization
+├── services/   account, catalog, plan, generation, feedback, history, notification, analytics
+└── scheduler/  jobs.py, runner.py (APScheduler: cron 02:00 + interval 5 min)</pre>
+<ul>
+  <li><b>Python 3.10.11</b>, installed with <code>pip install -e ".[dev]"</code> from <code>backend/pyproject.toml</code>.</li>
+  <li><b>App lifespan</b>: create tables → seed catalog (60 occasions, 20 topics, 40 templates) → train/load tone classifier → start in-process scheduler → serve.</li>
+  <li><b>Async where it matters</b>: generation runs in a background task (HTTP <code>202</code> + polling endpoint) so requests never block; LLM adapters use <code>httpx.AsyncClient</code>.</li>
+</ul>
+
+<h3>3.2 Configuration (pydantic-settings, prefix <code>MM_</code>)</h3>
+<table>
+  <tr><th>Variable</th><th>Default</th><th>Purpose</th></tr>
+  <tr><td><code>MM_DATABASE_URL</code></td><td><code>sqlite:///./monthlymuse.db</code></td><td>Swap to <code>postgresql+psycopg://…</code> — schema unchanged</td></tr>
+  <tr><td><code>MM_LLM_PROVIDER</code></td><td><code>template</code></td><td><code>template | openai | anthropic | ollama</code></td></tr>
+  <tr><td><code>MM_EMBEDDER</code></td><td><code>hash</code></td><td><code>hash</code> (own 384-d) or <code>sentence-transformers</code></td></tr>
+  <tr><td><code>MM_SCHEDULER_ENABLED</code> / <code>MM_SCHEDULER_TIMEZONE</code></td><td><code>true</code> / <code>Asia/Kolkata</code></td><td>Worker behaviour and reminder timezone</td></tr>
+  <tr><td><code>MM_SECRET_KEY</code></td><td>dev value</td><td>JWT signing — changed per environment, never committed</td></tr>
+  <tr><td><code>MM_GENERATIONS_PER_HOUR</code> / <code>MM_REQUESTS_PER_MINUTE</code></td><td>10 / 100</td><td>Sliding-window rate limits</td></tr>
+  <tr><td><code>MM_LLM_MONTHLY_BUDGET_USD</code></td><td>5.0</td><td>Cost guardrail fed by the PRICING table</td></tr>
+  <tr><td><code>MM_EMAIL_BACKEND</code></td><td><code>console</code></td><td><code>console | smtp | resend</code></td></tr>
+</table>
+
+<h3>3.3 Security</h3>
+<ul>
+  <li><b>Argon2id</b> password hashing (argon2-cffi), tuned parameters, constant-time compare.</li>
+  <li><b>JWT access (15 min)</b> in memory + <b>refresh (14 days)</b> in an httpOnly, SameSite cookie; silent refresh in the API client hides 401s.</li>
+  <li>Signed <b>ICS calendar token</b> so subscription URLs work without a login.</li>
+  <li>Uniform error envelope <code>{error: {code, message, details, request_id}}</code>, CORS allow-list, per-user + global rate limits, structured JSON logs carrying <code>request_id</code>.</li>
+</ul>
+
+<h2>4. AI / NLP engine in detail</h2>
+<p>All algorithms are pure NumPy/SciPy and unit-tested against the blueprint's Section 17 golden values.</p>
+<table>
+  <tr><th style="width:22%">Stage</th><th style="width:30%">Implementation</th><th>Key parameters / guarantees</th></tr>
+  <tr><td>1. Preprocessing</td><td><code>ai/text.py</code></td><td>normalize → tokenize → lightweight lemma → keyword extraction (TF-IDF-ish scoring), n-gram Jaccard dedup, banned-word & CTA checks</td></tr>
+  <tr><td>2. Embeddings</td><td><code>ai/embedder.py</code></td><td>384-d feature hashing with signed weights, L2-normalised; optional MiniLM; vectors stored as float32 BLOBs</td></tr>
+  <tr><td>3. Similarity</td><td><code>ai/similarity.py</code></td><td><code>cosine</code>, <code>E·Hᵀ</code> history matrix, novelty = 1 − max cos, PCA 2-D map for the UI</td></tr>
+  <tr><td>4. Features</td><td><code>ai/features.py</code></td><td>relevance, tone, personalization ⟨e,u⟩, novelty, length (z-score), history (Beta) → row F ∈ [0,1]⁶</td></tr>
+  <tr><td>5. Scoring</td><td><code>ai/scoring.py</code></td><td><code>s = F·w</code>, default w = (.30,.20,.20,.15,.10,.05); constrained gradient step (λ=0.005, β=8, lr=0.01) projected onto the simplex; reason-nudge from reject reasons</td></tr>
+  <tr><td>6. Diversity</td><td><code>ai/mmr.py</code></td><td>MMR λ=0.7 with greedy + exhaustive options and style-arm quotas so the top-3 differ</td></tr>
+  <tr><td>7. Confidence</td><td><code>ai/confidence.py</code></td><td>Dirichlet Monte-Carlo, 200 seeded samples (seed 42) → P(rank-1) + band; Wilson intervals for rates</td></tr>
+  <tr><td>8. Arms</td><td><code>ai/arms.py</code></td><td>Thompson sampling over tone × structure arms (Beta priors, 2 exploit + 1 explore), Laplace-smoothed tone suggestions</td></tr>
+  <tr><td>9. Tone</td><td><code>ai/tone.py</code></td><td>Softmax logistic regression trained on 800 labeled rows at startup, weights cached to <code>.npz</code>, confusion-matrix helper</td></tr>
+  <tr><td>10. Generation</td><td><code>ai/llm_adapters.py</code></td><td>OpenAI/Anthropic/Ollama/Template behind one interface; retry 1s/3s/9s + jitter, circuit breaker 5 fails/60 s, tolerant JSON parse, PRICING cost table</td></tr>
+  <tr><td>11. Personalization</td><td><code>ai/personalization.py</code></td><td>reward model → preference vector u (EMA), Beta arm stats, learned length stats, online weight updates, edit-distance attribution</td></tr>
+</table>
+<div class="good"><b>Determinism:</b> seeded RNG everywhere (Monte-Carlo, Thompson, training) — same inputs and weights always produce the same ranking, which is what makes the golden-value test suite possible.</div>
+
+<h2 class="pb">5. Frontend in detail</h2>
+<ul>
+  <li><b>Next.js 14.2 (App Router) + TypeScript 5</b> — 13 routes; client components only where interactivity demands it; production build ≈ 88 kB shared JS.</li>
+  <li><b>Tailwind CSS 3.4</b> implements the Section 12 design system: indigo primary scale, 7-color chart palette, type scale (display → small), radii, shadows, plus component classes (<code>card</code>, <code>btn</code>, <code>input</code>, <code>chip</code>, <code>badge</code>) and reduced-motion support.</li>
+  <li><b>TanStack Query 5</b> — one <code>http</code> wrapper (<code>lib/api.ts</code>) handles JSON, auth headers, silent refresh on 401, and typed errors; generation status polls every 1.5 s until done.</li>
+  <li><b>React Hook Form + Zod</b> — the 3-step Create form validates with a Zod schema shared by all steps, autosaves drafts every 5 s.</li>
+  <li><b>Recharts 3</b> — radar chart for compare mode, 2-D scatter for the embedding map, donut/bars/line/CI bars for analytics.</li>
+  <li><b>lucide-react</b> icons, <b>date-fns</b> date formatting.</li>
+</ul>
+<table>
+  <tr><th>Screen</th><th>Blueprint section</th><th>What it does</th></tr>
+  <tr><td>Dashboard</td><td>3.1</td><td>Next-action banner, this-month card, 12-cycle timeline, quick stats, activity feed</td></tr>
+  <tr><td>Create</td><td>3.2</td><td>3-step form, tone chips with Bayesian recommendation hints, occasion/keyword chips, “what the AI will use” panel</td></tr>
+  <tr><td>Review / Compare</td><td>3.3</td><td>Stage tracker, 3 ranked cards with score rings + confidence + similarity meters, why-ranked text, expandable feature bars, compare mode (radar + highlighted diffs), PCA embedding map, filtered-candidates disclosure, select/edit/copy/like/dislike/reject/regenerate</td></tr>
+  <tr><td>Calendar</td><td>3.4</td><td>Month grid with status chips, cycle modal (generate now / skip / reschedule), .ics download</td></tr>
+  <tr><td>Plans</td><td>3.7</td><td>List/create/pause/resume/delete Monthly Plans</td></tr>
+  <tr><td>History</td><td>3.5</td><td>Text + semantic search, filters, detail drawer with batch context, reuse</td></tr>
+  <tr><td>Analytics</td><td>3.6</td><td>Usage / Content / Quality tabs: donut, bars, lines, Wilson CI bars, chi-square panel, novelty & entropy</td></tr>
+  <tr><td>Settings</td><td>3.7</td><td>Voice, banned words, emoji, length, variety slider, pause learning, learned priorities + tone arms + reset, audiences CRUD, export/delete</td></tr>
+</table>
+
+<h2>6. Data layer</h2>
+<ul>
+  <li><b>16 tables</b> per blueprint Section 9 (listed in §2 above); portable string enums instead of native PG enums so SQLite and Postgres share one schema.</li>
+  <li><b>UTC everywhere</b>: a custom <code>UTCDateTime</code> TypeDecorator normalises SQLite's naive datetimes back to aware UTC — no naive/aware mixing bugs.</li>
+  <li><b>Vectors</b> as float32 BLOBs (<code>vec_to_blob/blob_to_vec</code>); cosine similarity computed in NumPy — identical results on SQLite and Postgres, pgvector-ready for V2 scale.</li>
+  <li><b>JSON columns</b> where the blueprint allows them (tone_counts, per-request stage output) keep reads cheap without a schema change.</li>
+  <li>Alembic 1.13 is installed and the metadata is importable, so <code>alembic revision --autogenerate</code> works out of the box for the Postgres deployment.</li>
+</ul>
+
+<h2>7. Automation (worker)</h2>
+<ul>
+  <li><b>APScheduler 3.11</b>: daily cron 02:00 (timezone <code>MM_SCHEDULER_TIMEZONE</code>) + 5-minute interval trigger; runs in-process by default, or standalone via <code>python -m app.scheduler.runner</code> (compose does the latter).</li>
+  <li>Jobs: <code>prepare_due_cycles</code> (idempotent — creates next month's cycle + generation request), <code>send_reminders</code> (T-3, T-1, and NEEDS_ATTENTION nudges), <code>catch_up</code> (missed runs), <code>extend_plans</code> (auto-extend the 12-cycle horizon), all recorded in <code>job_runs</code> for the admin page.</li>
+  <li>Cycle state machine: <code>PLANNED → GENERATING → AWAITING_REVIEW → APPROVED → SCHEDULED → PUBLISHED</code> (+ SKIPPED / FAILED).</li>
+</ul>
+
+<h2>8. Testing, CI, DevOps</h2>
+<table>
+  <tr><th style="width:26%">Suite</th><th>Contents</th></tr>
+  <tr><td><code>test_math.py</code> (35)</td><td>Section 17 golden values: feature/score vector, gradient steps (w_N→0.161, w_P→0.195, w_L→0.094), MMR order [A,C,F], Wilson CI (3,10)=(0.108,0.603), choice probabilities ≈[0.46,0.34,0.20]</td></tr>
+  <tr><td><code>test_pipeline.py</code> (12)</td><td>Hard constraints, dedup, arm-aware MMR, confidence seeding, stage payload</td></tr>
+  <tr><td><code>test_api.py</code></td><td>End-to-end journey: register → plan → generate (202 + poll) → feedback → approve → analytics</td></tr>
+  <tr><td><code>test_scheduler.py</code> (4)</td><td>Reminder days, idempotent preparation, catch-up, plan extension</td></tr>
+  <tr><td>Frontend gate</td><td><code>tsc --noEmit</code> + ESLint + <code>next build</code> (15 routes, 0 warnings)</td></tr>
+</table>
+<p>
+<b>CI</b> (<code>.github/workflows/ci.yml</code>): backend pytest on Python 3.10 &amp; 3.11; frontend typecheck + production build on Node 20 — every push/PR.
+<b>Compose</b> (<code>docker-compose.yml</code>): postgres:16 + api + worker + frontend, health-checked, one command start.
+</p>
+
+<h2>9. Deviations from the blueprint (and why)</h2>
+<table>
+  <tr><th style="width:26%">Blueprint recommendation</th><th style="width:30%">What we shipped</th><th>Reason</th></tr>
+  <tr><td>PostgreSQL + pgvector</td><td>SQLite default, Postgres-ready</td><td>No Docker/Postgres on the target machine; one env var switches, schema &amp; tests identical (chosen with the product owner)</td></tr>
+  <tr><td>sentence-transformers (384-d)</td><td>Own hashing embedder by default, MiniLM optional</td><td>Instant startup, offline, deterministic; same dimensionality so every formula/test is unchanged (chosen with the product owner)</td></tr>
+  <tr><td>spaCy + YAKE preprocessing</td><td>Own <code>text.py</code> (spaCy as an optional extra)</td><td>Heavy native deps; the needed operations are small and testable in isolation</td></tr>
+  <tr><td>shadcn/ui</td><td>Own component library on Tailwind tokens</td><td>Fewer moving parts, full control of the Section 12 tokens, no CLI-generated code drift</td></tr>
+  <tr><td>Hosted LLM in the hot path</td><td>Template engine as default provider</td><td>Zero-cost, always-available demo; hosted adapters keep retry/breaker/cost metering for production</td></tr>
+</table>
+
+<h2>10. Runtime requirements</h2>
+<ul>
+  <li><b>Dev machine</b>: Python 3.10+ (tested 3.10.11), Node 18+ (tested 22.19 / npm 10.9). No Docker or PostgreSQL needed for the default SQLite mode.</li>
+  <li><b>Production</b>: any Docker host — <code>docker compose up --build</code> (Postgres 16, API :8000, worker, frontend :3000); secrets via environment, never in Git.</li>
+  <li><b>Scale path</b>: swap DB URL → Postgres + pgvector, run multiple stateless API instances, move the worker to its own container (already supported), and enable the MiniLM embedder for stronger semantics — no code changes required.</li>
+</ul>
+
+<div class="footer">MonthlyMuse · Technology Stack reference · generated from the implemented codebase (61 API endpoints, 62 tests, 15 frontend routes)</div>
+
+</body>
+</html>

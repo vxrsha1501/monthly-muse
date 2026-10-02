@@ -1,0 +1,52 @@
+name,month,day,region,category,description
+New Year fresh start,1,1,global,holiday,New Year - goals, resolutions and fresh beginnings
+Winter season,1,,global,season,Deep winter - cosy, indoor and warm themes
+Lohri and Pongal,1,13,India,holiday,S harvest festivals marking the end of winter and the return of the sun
+Makar Sankranti,1,14,India,holiday,Kite festival and harvest celebration across northern India
+Republic Day,1,26,India,holiday,National day celebrating the Constitution of India
+Valentine's season,2,14,global,holiday,Love, friendship and appreciation themed content
+Budget season,2,,global,business,New fiscal year planning for businesses and professionals
+Late winter,2,,global,season,End of winter - anticipation of spring themes
+Mahashivratri,2,,India,holiday,Night of Shiva - spiritual and reflective messaging
+Spring begins,3,20,global,season,First day of spring - renewal and fresh starts
+International Women's Day,3,8,global,awareness,Celebrating women's achievements and support
+Holi,3,,India,holiday,Festival of colours - joyful, playful and community themes
+Eid al-Fitr,3,,India,holiday,Celebration marking the end of Ramadan (date moves yearly)
+Earth Day,4,22,global,awareness,Environmental awareness and sustainability messaging
+Spring season,4,,global,season,Mild weather, growth and outdoor themes
+Baisakhi,4,14,India,holiday,Harvest festival of Punjab and northern India
+Ambedkar Jayanti,4,14,India,holiday,Commemoration of Dr B. R. Ambedkar
+Mental Health Awareness,5,,global,awareness,Kindness, wellbeing and mental health support themes
+Mother's Day,5,,global,holiday,Second Sunday of May - appreciation for mothers (nth weekday rule)
+Akshaya Tritiya,5,,India,holiday,Auspicious day for new beginnings and purchases
+World Environment Day,6,5,global,awareness,Environmental action and sustainability
+Summer begins,6,21,global,season,First day of summer - travel, outdoors and holidays
+Monsoon begins,6,,India,season,Arrival of the monsoon - rain, refreshment and indoor cosiness
+Eid al-Adha,6,,India,holiday,Festival of sacrifice (date moves yearly)
+Mid-year reset,7,,global,business,Half-year review, goals and fresh momentum
+Summer holidays,7,,global,season,School holidays, travel and family time
+Guru Purnima,7,,India,holiday,Day of gratitude towards teachers and mentors
+Independence Day,8,15,India,holiday,National day of India - pride and community themes
+Back to school,8,,global,season,New term, routines and learning themes
+World Photography Day,8,19,global,awareness,Celebrating photos, memories and visual storytelling
+Teacher's Day,9,5,India,holiday,Appreciation for teachers and mentors
+Navratri begins,9,,India,holiday,Nine nights of dance, devotion and community celebration
+Back to school and college,9,,global,season,New academic year - fresh starts and study themes
+Festive season begins,10,,global,season,Start of the autumn festive period - gifting and gatherings
+Gandhi Jayanti,10,2,India,holiday,National holiday honouring Mahatma Gandhi
+Dussehra,10,,India,holiday,Victory of good over evil - new beginnings and purchases
+Durga Puja,10,,India,holiday,Bengal's biggest festival - art, community and celebration
+Diwali,11,,India,holiday,Festival of lights - gifting, sweets, togetherness and new beginnings
+Start of festive season,11,,India,season,Celebrations, gifting, gatherings and warm evenings
+Thanksgiving,11,,US,holiday,Fourth Thursday of November - gratitude and togetherness (nth weekday rule)
+Bhai Dooj,11,,India,holiday,Celebration of the bond between brothers and sisters
+Christmas season,12,25,global,holiday,Gifting, goodwill and year-end togetherness
+Year-end review,12,,global,business,Reflection on the year and planning for the next
+Winter holidays,12,,global,season,Rest, family and celebration themes
+New Year's Eve,12,31,global,holiday,Countdown, celebration and farewell to the year
+Offline meetup,5,,custom,custom,User-defined gathering or community meetup
+Product launch,3,,business,business,Announcing something new to customers
+Service update,7,,business,business,Operational or service-related announcements
+Anniversary,4,,custom,custom,Celebrating the founding or milestone of the organisation
+Seasonal sale,11,,business,business,Discount or promotional period tied to the season
+Community spotlight,8,,custom,custom,Featuring a member, volunteer or customer story

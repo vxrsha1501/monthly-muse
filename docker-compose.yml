@@ -1,0 +1,59 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: monthlymuse
+      POSTGRES_PASSWORD: monthlymuse
+      POSTGRES_DB: monthlymuse
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U monthlymuse"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  backend:
+    build: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      MM_DATABASE_URL: postgresql+psycopg://monthlymuse:monthlymuse@db:5432/monthlymuse
+      MM_ENVIRONMENT: production
+      MM_SECRET_KEY: change-me-in-production
+      MM_CORS_ORIGINS: http://localhost:3000
+      MM_SCHEDULER_ENABLED: "false"   # the worker service runs the scheduler
+    volumes:
+      - ./data:/srv/data:ro
+      - backend_data:/data
+    ports:
+      - "8000:8000"
+
+  worker:
+    build: ./backend
+    command: ["python", "-m", "app.scheduler.runner"]
+    depends_on:
+      - backend
+    environment:
+      MM_DATABASE_URL: postgresql+psycopg://monthlymuse:monthlymuse@db:5432/monthlymuse
+      MM_ENVIRONMENT: production
+      MM_SECRET_KEY: change-me-in-production
+      MM_SCHEDULER_ENABLED: "true"
+      MM_SCHEDULER_TIMEZONE: Asia/Kolkata
+    volumes:
+      - ./data:/srv/data:ro
+      - backend_data:/data
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000/api/v1
+    ports:
+      - "3000:3000"
+
+volumes:
+  pgdata:
+  backend_data:
