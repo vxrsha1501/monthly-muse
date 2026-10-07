@@ -30,6 +30,16 @@ def client():
         yield test_client
 
 
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Rate-limit buckets are global in-process state; isolate them per test so
+    unrelated tests never starve each other (the limiter itself is tested)."""
+    from app.core.rate_limit import limiter
+    limiter.reset()
+    yield
+    limiter.reset()
+
+
 @pytest.fixture()
 def auth_headers(client):
     """A fresh registered user per test (isolated by unique email)."""

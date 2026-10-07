@@ -238,3 +238,12 @@ def test_rate_limit_and_validation(client, auth_headers):
         "month": "2026-13", "tones": ["warm"],   # invalid month
     })
     assert resp.status_code == 422
+
+
+def test_login_brute_force_rate_limited(client):
+    """11 wrong passwords in a row must trip the 10-per-5min limiter (429)."""
+    payload = {"email": "brute@example.com", "password": "wrong-pass-123"}
+    codes = [client.post("/api/v1/auth/login", json=payload).status_code
+             for _ in range(11)]
+    assert codes.count(401) == 10, codes
+    assert codes[-1] == 429, codes

@@ -34,8 +34,13 @@ limiter = SlidingWindowLimiter()
 
 
 def rate_limit(key: str, kind: str = "api") -> None:
-    """kind: 'api' -> requests/min per key; 'generation' -> generations/hour per user."""
+    """kind: 'api' -> requests/min per key; 'generation' -> generations/hour per user;
+    'login' -> attempts per 5 min per email+IP; 'register' -> per hour per IP."""
     if kind == "generation":
         limiter.check(f"gen:{key}", settings.generations_per_hour, 3600)
+    elif kind == "login":
+        limiter.check(f"login:{key}", 10, 300)
+    elif kind == "register":
+        limiter.check(f"register:{key}", 20, 3600)
     else:
         limiter.check(f"api:{key}", settings.requests_per_minute, 60)

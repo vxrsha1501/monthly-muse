@@ -1,11 +1,12 @@
 """Auth endpoints: register, login, rotating refresh cookie, logout (Section 10.2)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Cookie, Depends, Response
+from fastapi import APIRouter, Cookie, Depends, Request, Response
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.deps import get_db
+from app.core.rate_limit import rate_limit
 from app.core.security import create_access_token, create_refresh_token, decode_token
 from app.schemas.auth import LoginIn, RegisterIn, TokenOut, UserOut
 from app.services import account_service
@@ -29,15 +30,24 @@ def _set_refresh(response: Response, user_id: str) -> None:
     )
 
 
+def _client_host(request: Request) -> str:
+    return request.client.host if request.client else "unknown"
+
+
 @router.post("/register", response_model=TokenOut, status_code=201)
-def register(data: RegisterIn, response: Response, db: Session = Depends(get_db)) -> TokenOut:
+def register(data: RegisterIn, response: Response, request: Request,
+             db: Session = Depends(get_db)) -> TokenOut:
+    rate_limit(_client_host(request), kind="register")
     user = account_service.register(db, data)
     _set_refresh(response, user.id)
     return TokenOut(access_token=create_access_token(user.id, user.role), user=UserOut.model_validate(user))
 
 
 @router.post("/login", response_model=TokenOut)
-def login(data: LoginIn, response: Response, db: Session = Depends(get_db)) -> TokenOut:
+def login(data: LoginIn, response: Response, request: Request,
+          db: Session = Depends(get_db)) -> TokenOut:
+    # Brute-force guard: 10 attempts per 5 minutes per email+IP.
+    rate_limit(f"{_client_host(request)}:{data.email.lower()}", kind="login")
     user = account_service.authenticate(db, data.email, data.password)
     _set_refresh(response, user.id)
     return TokenOut(access_token=create_access_token(user.id, user.role), user=UserOut.model_validate(user))
