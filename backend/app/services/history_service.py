@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
 import numpy as np
 from sqlalchemy import select
@@ -21,11 +20,32 @@ VISIBLE_STATUSES = (MessageStatus.SHOWN, MessageStatus.SELECTED, MessageStatus.E
                     MessageStatus.REJECTED, MessageStatus.ARCHIVED)
 
 
-def _month_range(month: str) -> tuple[datetime, datetime]:
-    year, mon = int(month.split("-")[0]), int(month.split("-")[1])
-    start = datetime(year, mon, 1, tzinfo=timezone.utc)
-    end = datetime(year + (1 if mon == 12 else 0), 1 if mon == 12 else mon + 1, 1, tzinfo=timezone.utc)
-    return start, end
+def request_months(db: Session, user_id: str) -> dict[str, str]:
+    """request_id -> posting month the batch was written for (e.g. '2026-11')."""
+    months: dict[str, str] = {}
+    for r in db.scalars(select(GenerationRequest).where(GenerationRequest.user_id == user_id)):
+        m = (r.input or {}).get("month")
+        if m:
+            months[r.id] = str(m)
+    return months
+
+
+def content_month(row: GeneratedMessage, months: dict[str, str] | None = None,
+                  db: Session | None = None) -> str | None:
+    """The month a message is *about* (its generation payload), never its insert time.
+
+    Posts are generated ahead of time (November posts are written in October), so
+    created_at must not be used as a content-month label anywhere in the UI/analytics.
+    """
+    m = None
+    if months is not None:
+        m = months.get(row.request_id)
+    elif db is not None:
+        req = db.get(GenerationRequest, row.request_id)
+        m = (req.input or {}).get("month") if req else None
+    if not m and row.created_at:
+        return row.created_at.strftime("%Y-%m")
+    return m
 
 
 def search_history(db: Session, user_id: str, *, q: str | None = None, tone: str | None = None,
@@ -39,9 +59,6 @@ def search_history(db: Session, user_id: str, *, q: str | None = None, tone: str
         stmt = stmt.where(GeneratedMessage.intended_tone == tone)
     if status:
         stmt = stmt.where(GeneratedMessage.status == status)
-    if month:
-        start, end = _month_range(month)
-        stmt = stmt.where(GeneratedMessage.created_at >= start, GeneratedMessage.created_at < end)
     if min_score is not None:
         stmt = stmt.where(GeneratedMessage.score >= min_score)
     if max_score is not None:
@@ -51,6 +68,9 @@ def search_history(db: Session, user_id: str, *, q: str | None = None, tone: str
         stmt = stmt.where(GeneratedMessage.text.ilike(like) | GeneratedMessage.final_text.ilike(like))
 
     rows = list(db.scalars(stmt).all())
+    months_by_request = request_months(db, user_id)
+    if month:
+        rows = [r for r in rows if content_month(r, months_by_request) == month]
 
     if topic:
         wanted = topic.lower()
@@ -87,7 +107,7 @@ def search_history(db: Session, user_id: str, *, q: str | None = None, tone: str
 
     items = [HistoryItemOut(
         id=row.id, text=row.final_text or row.text,
-        month=row.created_at.strftime("%Y-%m") if row.created_at else None,
+        month=content_month(row, months_by_request),
         topic=_topic_of(db, row), tone=row.intended_tone, style_label=row.style_label,
         platform=_platform_of(db, row), status=row.status.value, score=row.score,
         novelty=row.f_novelty, created_at=row.created_at,

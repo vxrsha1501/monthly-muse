@@ -16,8 +16,11 @@ router = APIRouter(prefix="/monthly-plans", tags=["plans"])
 def _to_out(db: Session, plan) -> PlanOut:
     cycles = list(db.scalars(select(PostCycle).where(PostCycle.plan_id == plan.id)
                              .order_by(PostCycle.target_month)).all())
-    upcoming = next((c for c in cycles if c.status in (CycleStatus.PLANNED, CycleStatus.GENERATING,
-                                                       CycleStatus.AWAITING_REVIEW)), None)
+    # "Next generation" must match what the scheduler will actually run next
+    # (PLANNED / GENERATION_FAILED with generate_at due) - not a cycle that has
+    # already generated and is merely awaiting review.
+    upcoming = next((c for c in cycles if c.status in (CycleStatus.PLANNED,
+                                                       CycleStatus.GENERATION_FAILED)), None)
     last = next((c for c in reversed(cycles) if c.status != CycleStatus.PLANNED), None)
     out = PlanOut.model_validate(plan)
     out.next_generate_at = upcoming.generate_at if upcoming else None

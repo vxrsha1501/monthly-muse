@@ -83,15 +83,21 @@ def month_str(offset: int) -> str:
 
 
 def seed_demo(db, cfg: dict) -> None:
-    existing = db.scalar(select(User).where(User.email == cfg["email"]))
-    if existing is not None:
-        print(f"Already exists: {cfg['email']} / {cfg['password']} - skipping")
-        return
-
-    user = account_service.register(db, RegisterIn(
-        email=cfg["email"], password=cfg["password"], full_name=cfg["full_name"],
-        timezone="Asia/Kolkata", region="India", locale="en",
-    ))
+    user = db.scalar(select(User).where(User.email == cfg["email"]))
+    if user is not None:
+        # Idempotent: skip only when the persona + demo data already exist. A user
+        # created through the public register API still gets backfilled here.
+        has_plan = db.scalar(select(MonthlyPlan.id)
+                             .where(MonthlyPlan.user_id == user.id).limit(1)) is not None
+        if has_plan:
+            print(f"Already seeded: {cfg['email']} - skipping")
+            return
+        print(f"[{cfg['label']}] {cfg['email']} exists - backfilling persona and demo data")
+    else:
+        user = account_service.register(db, RegisterIn(
+            email=cfg["email"], password=cfg["password"], full_name=cfg["full_name"],
+            timezone="Asia/Kolkata", region="India", locale="en",
+        ))
     account_service.update_preferences(db, user, PreferencesIn(
         default_platform=cfg["platform"],
         voice_notes=cfg["voice_notes"],

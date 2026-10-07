@@ -3,28 +3,24 @@
     "occasion_ref": [
       "{occasion}",
       "this year's {occasion}",
-      "the {occasion} season",
       "{occasion} celebrations",
       "everyone's favourite {occasion}"
     ],
     "season_ref": [
-      "the {season}",
-      "{season} weather",
-      "this {season}",
-      "another {season}"
+      "{season}",
+      "{season} weather"
     ],
     "keyword_ref": [
       "{keyword}",
-      "our {keyword}",
       "a little something: {keyword}",
       "{keyword} - just for you",
-      "the {keyword} everyone keeps asking about"
+      "{keyword} - the one everyone keeps asking about"
     ],
     "audience_ref": [
       "{audience}",
-      "our {audience} community",
       "{audience} near and far",
-      "you, our {audience}"
+      "you, {audience}",
+      "{audience} everywhere"
     ],
     "cta": [
       "{cta_text}.",

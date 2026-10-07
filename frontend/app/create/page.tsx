@@ -30,6 +30,15 @@ const schema = z.object({
   keywords: z.array(z.string()).max(6),
   cta: z.string().max(200).nullable().optional(),
   additional_instructions: z.string().max(500).nullable().optional(),
+}).superRefine((v, ctx) => {
+  // Blueprint: topic is required - either a saved topic or a typed one.
+  if (!v.topic?.trim() && !v.topic_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ["topic"],
+      message: "Topic is required - pick a saved topic or type one",
+    });
+  }
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -133,8 +142,10 @@ export default function CreatePage() {
     generate.mutate({
       month: data.month,
       topic_id: data.topic_id ?? undefined,
-      topic: data.topic || undefined,
-      occasion: data.occasion || undefined,
+      topic: data.topic?.trim() || undefined,
+      // null (untouched/deselected) = omit -> backend auto-pulls the month's top
+      // occasion; "" = the user explicitly chose None; otherwise the picked name.
+      occasion: data.occasion ?? undefined,
       audience_id: data.audience_id ?? undefined,
       tones: data.tones,
       purpose: data.purpose,
@@ -233,8 +244,8 @@ export default function CreatePage() {
             <div>
               <label className="label">Occasion <span className="font-normal text-muted">(suggested for this month)</span></label>
               <div className="flex flex-wrap gap-2">
-                <button type="button" className={`chip ${!values.occasion ? "chip-active" : ""}`}
-                  onClick={() => setValue("occasion", null)}>None</button>
+                <button type="button" className={`chip ${values.occasion === "" ? "chip-active" : ""}`}
+                  onClick={() => setValue("occasion", "")}>None</button>
                 {(occasions ?? []).slice(0, 8).map((o) => (
                   <button key={o.id} type="button"
                     className={`chip ${values.occasion === o.name ? "chip-active" : ""} max-w-64`}
@@ -371,7 +382,11 @@ export default function CreatePage() {
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-body">
                 <div className="flex justify-between gap-3"><dt className="text-muted">Month</dt><dd className="font-medium">{monthLabel(values.month ?? nextMonth())}</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-muted">Topic</dt><dd className="font-medium text-right">{values.topic || "—"}</dd></div>
-                <div className="flex justify-between gap-3"><dt className="text-muted">Occasion</dt><dd className="font-medium text-right">{values.occasion ?? "None"}</dd></div>
+                <div className="flex justify-between gap-3"><dt className="text-muted">Occasion</dt><dd className="font-medium text-right">
+                  {values.occasion === null || values.occasion === undefined
+                    ? (occasions?.[0] ? "Auto (top suggestion)" : "Auto")
+                    : (values.occasion || "None")}
+                </dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-muted">Audience</dt><dd className="font-medium text-right">{(audiences ?? []).find((a) => a.id === values.audience_id)?.name ?? "Default"}</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-muted">Tones</dt><dd className="font-medium capitalize">{values.tones?.join(" + ")}</dd></div>
                 <div className="flex justify-between gap-3"><dt className="text-muted">Purpose</dt><dd className="font-medium capitalize">{values.purpose}</dd></div>
@@ -386,7 +401,7 @@ export default function CreatePage() {
               <h3 className="text-h3 mb-2 flex items-center gap-2"><Sparkles className="w-4 h-4 text-primary-600" /> What the AI will use</h3>
               <ul className="text-body text-ink-2 space-y-1.5">
                 <li>· {historyTotal?.total ?? 0} past post{historyTotal?.total === 1 ? "" : "s"} retrieved for voice and novelty checks</li>
-                <li>· Occasion facts for {monthLabel(values.month ?? nextMonth())} {values.occasion ? `(${values.occasion})` : ""}</li>
+                <li>· Occasion facts for {monthLabel(values.month ?? nextMonth())} {values.occasion ? `(${values.occasion})` : values.occasion === "" ? "" : "(auto-selected top suggestion)"}</li>
                 <li>· Your preference profile{(learned?.arm_stats.length ?? 0) > 0 ? ` and ${learned?.arm_stats.length} learned style arms` : " (cold start - exploration active)"}</li>
                 <li>· Three style arms chosen by Thompson sampling, 6 candidates generated, top 3 shown</li>
               </ul>
@@ -418,7 +433,11 @@ export default function CreatePage() {
               Continue <ArrowRight className="w-4 h-4" />
             </button>
           ) : (
-            <button type="submit" className="btn-primary" disabled={generate.isPending}>
+            /* Always type=button: a type=button -> type=submit mutation lets the
+               browser's deferred click activation submit the form immediately,
+               skipping this step. Submit explicitly instead. */
+            <button type="button" className="btn-primary" disabled={generate.isPending}
+              onClick={() => void handleSubmit(onSubmit)()}>
               <Wand2 className="w-4 h-4" />
               {generate.isPending ? "Generating…" : "Generate 3 candidates"}
             </button>

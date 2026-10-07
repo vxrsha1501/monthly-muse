@@ -69,7 +69,7 @@ class Brief:
         lo, hi = preset_range(self.length_preset)
         return {
             "month": self.month, "month_name": self.month_name, "topic": self.topic,
-            "occasion": self.occasion, "occasion_name": self.occasion or "this month",
+            "occasion": self.occasion, "occasion_name": self.occasion or "the season",
             "occasion_fact": self.occasion_fact, "season": self.season,
             "audience": self.audience, "audience_name": self.audience,
             "audience_description": self.audience_description,

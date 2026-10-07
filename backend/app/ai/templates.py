@@ -149,7 +149,7 @@ class TemplateEngine:
         if level == 1:
             pick = bank[0]
             return (text + pick) if pick else text
-        picks = [e for e in bank if e]
+        picks = [e.strip() for e in bank if e.strip()]
         extra = " ".join(rng.sample(picks, min(2, len(picks))))
         return (text + " " + extra).strip() if extra else text
 

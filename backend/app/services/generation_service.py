@@ -25,6 +25,7 @@ from app.db.models import (CycleStatus, GeneratedMessage, GenerationRequest, Mes
 from app.db.session import SessionLocal, blob_to_vec, vec_to_blob
 from app.schemas.generation import CandidateOut, FeatureBreakdown, GenerateIn, NearestPast, StageOut
 from app.services.catalog_service import month_name, occasion_suggestions, season_for
+from app.services.history_service import content_month
 
 logger = logging.getLogger("monthlymuse.generation")
 
@@ -54,17 +55,19 @@ def build_brief(db: Session, user: User, payload: GenerateIn, cycle: PostCycle |
             audience_name = aud.name
             audience_description = aud.description or ""
 
-    occasion = payload.occasion or ""
+    # None = not specified -> pull the month's top suggestion (blueprint: "pulls the
+    # relevant occasion"); "" = the user explicitly chose None.
+    occasion = payload.occasion if payload.occasion is not None else ""
     occasion_fact = ""
-    if occasion:
-        from app.db.models import Occasion
-        row = db.scalar(select(Occasion).where(Occasion.name == occasion))
-        occasion_fact = row.description if row else ""
-    elif cycle is None:
+    if payload.occasion is None:
         suggestions = occasion_suggestions(db, month_int, user.region, user.id)
         if suggestions:
             occasion = suggestions[0].name
             occasion_fact = suggestions[0].description or ""
+    elif occasion:
+        from app.db.models import Occasion
+        row = db.scalar(select(Occasion).where(Occasion.name == occasion))
+        occasion_fact = row.description if row else ""
 
     # scheduled cycles merge plan defaults with per-cycle overrides (Section 4 step 2)
     plan = None
@@ -341,7 +344,10 @@ def to_candidate_out(row: GeneratedMessage, db: Session, user_id: str) -> Candid
         prev = db.get(GeneratedMessage, row.nearest_history_id)
         if prev is not None and prev.user_id == user_id:
             nearest.preview = (prev.final_text or prev.text)[:140]
-            nearest.month = (prev.created_at.strftime("%b %Y") if prev.created_at else None)
+            cm = content_month(prev, db=db)
+            if cm:
+                year, mon = cm.split("-")
+                nearest.month = datetime(int(year), int(mon), 1).strftime("%b %Y")
     text = row.final_text or row.text
     return CandidateOut(
         id=row.id, rank=row.rank, text=text,

@@ -81,11 +81,18 @@ def dashboard(db: Session, user: User) -> DashboardOut:
 
     this_month = next((c for c in cycles if c.target_month.year == now.year
                        and c.target_month.month == now.month), None)
+    # Timeline = every still-relevant future cycle in chronological order. Merging
+    # before the cut keeps an awaiting-review cycle (e.g. posting next week) from
+    # being pushed out by four later PLANNED cycles.
+    timeline = sorted(
+        future + [c for c in cycles
+                  if c.status in (CycleStatus.AWAITING_REVIEW, CycleStatus.SCHEDULED)
+                  and c.post_at >= now],
+        key=lambda c: c.post_at)
     upcoming = [UpcomingCycle(id=c.id, target_month=c.target_month.strftime("%Y-%m"),
                               post_at=c.post_at, generate_at=c.generate_at,
                               status=c.status.value, plan_name=plans.get(c.plan_id))
-                for c in (future + [c for c in cycles if c.status in
-                                    (CycleStatus.AWAITING_REVIEW, CycleStatus.SCHEDULED)])[:4]]
+                for c in timeline[:4]]
 
     stats = quick_stats(db, user.id)
     activity = recent_activity(db, user.id)

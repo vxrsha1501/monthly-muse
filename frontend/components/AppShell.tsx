@@ -51,6 +51,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (user) void loadNotifications();
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const isAuthPage = pathname.startsWith("/login") || pathname.startsWith("/register");
+
   const unread = notifications.filter((n) => !n.read_at).length;
   const monthLabel = new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
@@ -61,7 +63,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } catch { /* ignore */ }
   };
 
-  if (!user) {
+  // Auth pages render standalone: never wrap them in the shell, so the fixed
+  // header/mobile tab bar can't cover the sign-in form (or its demo buttons).
+  if (!user || isAuthPage) {
     return <div className="min-h-screen bg-canvas">{children}</div>;
   }
 
