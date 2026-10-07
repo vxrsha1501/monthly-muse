@@ -1,0 +1,18 @@
+# Keep the build context small - the context is the repository root.
+.git
+.github
+.freebuff
+frontend/node_modules
+frontend/.next
+backend/app/__pycache__
+backend/**/__pycache__
+backend/tests
+**/*.pyc
+**/*.db
+**/*.db-shm
+**/*.db-wal
+docs/*.pdf
+notebooks
+*.log
+.env
+.env.local

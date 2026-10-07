@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MonthlyMuse — Project Progress Report</title>
+<style>
+  @page { size: A4; margin: 18mm 15mm 16mm 15mm; }
+  html { background: #FFFFFF; color-scheme: light only; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Inter, system-ui, -apple-system, sans-serif; color: #0F172A;
+         font-size: 10.5pt; line-height: 1.55; margin: 0; background: #FFFFFF; }
+  h1 { font-size: 24pt; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 14.5pt; margin: 26px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #4F46E5;
+       color: #312E81; page-break-after: avoid; }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; color: #0F172A; page-break-after: avoid; }
+  p, li { margin: 5px 0; }
+  ul, ol { padding-left: 20px; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 9pt; background: #F1F5F9;
+         padding: 1px 4px; border-radius: 3px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9pt;
+          page-break-inside: avoid; }
+  th { background: #4F46E5; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+  td { border-bottom: 1px solid #E2E8F0; padding: 5px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  .subtitle { color: #475569; font-size: 11.5pt; margin: 2px 0 14px; }
+  .meta { color: #64748B; font-size: 9pt; margin-bottom: 18px; }
+  .tag { display: inline-block; background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE;
+         border-radius: 999px; padding: 1px 9px; font-size: 8.5pt; margin-right: 5px; }
+  .kpis { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 6px; page-break-inside: avoid; }
+  .kpi { flex: 1 1 140px; border: 1.5px solid #E2E8F0; border-left: 5px solid #4F46E5;
+         border-radius: 8px; padding: 8px 10px; background: #fff; }
+  .kpi .n { font-size: 20pt; font-weight: 700; color: #312E81; line-height: 1.1; font-family: Consolas, monospace; }
+  .kpi .l { font-size: 8.5pt; color: #64748B; margin-top: 2px; }
+  .good { background: #ECFDF5; border-left: 4px solid #059669; padding: 7px 11px;
+          border-radius: 0 6px 6px 0; font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
+  .note { background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 7px 11px;
+          border-radius: 0 6px 6px 0; font-size: 9.5pt; margin: 10px 0; page-break-inside: avoid; }
+  .pb { page-break-before: always; }
+  .bar { background: #E2E8F0; border-radius: 4px; height: 9px; overflow: hidden; display: inline-block;
+         width: 110px; vertical-align: middle; margin-left: 6px; }
+  .bar > i { display: block; height: 100%; background: #059669; }
+  .tick { color: #059669; font-weight: 700; }
+  .partial { color: #D97706; font-weight: 700; }
+  .footer { color: #94A3B8; font-size: 8.5pt; margin-top: 24px; border-top: 1px solid #E2E8F0; padding-top: 6px; }
+</style>
+</head>
+<body>
+
+<h1>MonthlyMuse</h1>
+<div class="subtitle">Project Progress Report — full MVP delivered</div>
+<div class="meta">AI-Powered Automated Message Generator for Monthly Posting · status as of October 2026 ·
+companion to the Master Blueprint</div>
+
+<p>
+<span class="tag">MVP complete</span><span class="tag">62 tests green</span>
+<span class="tag">live &amp; demo-able</span><span class="tag">pushed to GitHub</span>
+<span class="tag">deploy-ready</span>
+</p>
+
+<h2>1. Executive summary</h2>
+<p>
+The project is <b>feature-complete against the blueprint's MVP definition (Section 15.1)</b> and is
+running live on the development machine. A user can register, define a Monthly Plan, receive three
+ranked message candidates with transparent score breakdowns, select/edit/reject one, watch the
+personalization engine update, and see the effect proven in analytics. The scheduler prepares each
+month's cycle automatically and sends T-3/T-1 reminders.
+</p>
+<div class="good">
+<b>Verification status:</b> 62/62 automated tests pass (including every golden value from Section 17),
+TypeScript typecheck and production build are clean, and the complete login → dashboard → review →
+feedback loop was exercised in a real browser and confirmed working end to end.
+</div>
+
+<div class="kpis">
+  <div class="kpi"><div class="n">62</div><div class="l">automated tests passing</div></div>
+  <div class="kpi"><div class="n">58</div><div class="l">API endpoints</div></div>
+  <div class="kpi"><div class="n">16</div><div class="l">database tables</div></div>
+  <div class="kpi"><div class="n">12</div><div class="l">frontend screens</div></div>
+  <div class="kpi"><div class="n">14</div><div class="l">AI pipeline stages</div></div>
+  <div class="kpi"><div class="n">119</div><div class="l">files in repository</div></div>
+</div>
+<div class="kpis">
+  <div class="kpi"><div class="n">7.5k</div><div class="l">lines of Python</div></div>
+  <div class="kpi"><div class="n">3.8k</div><div class="l">lines of TypeScript/TSX</div></div>
+  <div class="kpi"><div class="n">4</div><div class="l">runnable notebooks</div></div>
+  <div class="kpi"><div class="n">40</div><div class="l">message templates</div></div>
+  <div class="kpi"><div class="n">800</div><div class="l">tone training rows</div></div>
+  <div class="kpi"><div class="n">100%</div><div class="l">MVP scope delivered</div></div>
+</div>
+
+<h2 class="pb">2. Blueprint coverage</h2>
+<p>Status of every major section of the Master Blueprint.</p>
+<table>
+  <tr><th style="width:34%">Blueprint section</th><th style="width:12%">Status</th><th>What exists</th></tr>
+  <tr><td>§3 Product &amp; UX (screens)</td><td class="tick">Complete</td><td>12 screens: login, register, dashboard, create, review/compare, calendar, plans, history, analytics, settings</td></tr>
+  <tr><td>§4 AI/NLP pipeline (14 stages)</td><td class="tick">Complete</td><td>All stages implemented in <code>app/ai/pipeline.py</code>: preprocess → context → arms → generate → hard constraints → dedup → embed → features → score → MMR → confidence → explain</td></tr>
+  <tr><td>§5 Mathematical core</td><td class="tick">Complete</td><td><code>s = F·w</code>, constrained gradient step, MMR, Dirichlet Monte-Carlo, Wilson interval, Thompson sampling, softmax tone classifier, chi-square, entropy</td></tr>
+  <tr><td>§8 Scheduler worker</td><td class="tick">Complete</td><td>APScheduler: daily cycle preparation (idempotent), T-3/T-1 reminders, catch-up, plan extension, <code>job_runs</code> audit</td></tr>
+  <tr><td>§9 Database schema</td><td class="tick">Complete</td><td>All 16 tables, portable string enums, UTC-normalised timestamps, float32 vector BLOBs</td></tr>
+  <tr><td>§10 API design</td><td class="tick">Complete</td><td>58 endpoints, uniform error envelope, JWT access + rotating refresh cookie, rate limits, request-id logging</td></tr>
+  <tr><td>§11 Frontend</td><td class="tick">Complete</td><td>Next.js 14 App Router, TanStack Query polling, RHF+Zod forms, Recharts visualisations</td></tr>
+  <tr><td>§12 Design system</td><td class="tick">Complete</td><td>Indigo token scale, component classes, reduced-motion support, responsive + mobile tab bar</td></tr>
+  <tr><td>§13 Architecture</td><td class="tick">Complete</td><td>Stateless API, separate worker, one database — matches the specified topology</td></tr>
+  <tr><td>§14 Technology stack</td><td class="tick">Complete</td><td>As specified; four documented deviations (see §6)</td></tr>
+  <tr><td>§15.1 MVP</td><td class="tick">Complete</td><td>Every row of the MVP table implemented and covered by tests</td></tr>
+  <tr><td>§16 Evaluation &amp; analytics</td><td class="tick">Complete</td><td>Usage / Content / Quality dashboards: Wilson CIs, chi-square, novelty, entropy, MRR, top-1 agreement</td></tr>
+  <tr><td>§17 Golden tests</td><td class="tick">Complete</td><td>35 golden-value assertions, all passing</td></tr>
+  <tr><td>§19 Roadmap</td><td class="tick">Complete</td><td>All planned build stages delivered in one pass</td></tr>
+  <tr><td>Appendix B (repo, CI, Docker)</td><td class="tick">Complete</td><td>README, docker-compose, Dockerfiles, GitHub Actions CI, 4 notebooks</td></tr>
+  <tr><td>§15.2 Version 2</td><td class="partial">Not started</td><td>Platform publisher, engagement import, teams, dark mode, autopilot — intentionally out of MVP scope</td></tr>
+</table>
+
+<h2>3. Feature-by-feature completion</h2>
+<table>
+  <tr><th style="width:24%">Feature</th><th style="width:10%">Done</th><th style="width:10%">Tests</th><th>Detail</th></tr>
+  <tr><td>Accounts &amp; auth</td><td class="tick">100%</td><td>API journey</td><td>Register, login, logout, refresh rotation, Argon2id hashing, profile, timezone, data export, account delete</td></tr>
+  <tr><td>Monthly Plans</td><td class="tick">100%</td><td>API + scheduler</td><td>12-cycle creation, pause/resume/delete, auto-extension, next-generation computation</td></tr>
+  <tr><td>Create Post form</td><td class="tick">100%</td><td>UI verified</td><td>3-step form, draft autosave, tone chips with Bayesian hints, occasion/keyword chips, "what the AI will use" panel</td></tr>
+  <tr><td>Generation pipeline</td><td class="tick">100%</td><td>12 pipeline + API</td><td>6 candidates over-generated → hard-constraint filter → dedup → MMR → top 3; 202 + polling pattern</td></tr>
+  <tr><td>LLM adapters</td><td class="tick">100%</td><td>Unit + integration</td><td>Template (default, offline), OpenAI, Anthropic, Ollama; retry 1/3/9 s + jitter, circuit breaker, tolerant JSON parse, cost metering</td></tr>
+  <tr><td>Review &amp; compare</td><td class="tick">100%</td><td>Browser-verified</td><td>3 ranked cards, score rings, confidence chips, similarity meters, why-ranked text, expandable feature bars, radar compare, PCA map, filtered-candidate disclosure</td></tr>
+  <tr><td>Candidate actions</td><td class="tick">100%</td><td>API + browser</td><td>Select, edit, copy, like, dislike, reject-with-reason, regenerate — each writes a feedback event</td></tr>
+  <tr><td>Personalization</td><td class="tick">100%</td><td>Math golden tests</td><td>Preference vector (EMA), Beta arms, learned length stats, online weight updates, reason nudges, learned-values UI with reset</td></tr>
+  <tr><td>Calendar</td><td class="tick">100%</td><td>Scheduler tests</td><td>Month grid with status chips, cycle detail modal, generate-now/skip/reschedule, signed .ics subscription</td></tr>
+  <tr><td>History &amp; search</td><td class="tick">100%</td><td>Service tests</td><td>Text search + semantic (embedding) search, filters, detail drawer with batch context, reuse</td></tr>
+  <tr><td>Analytics</td><td class="tick">100%</td><td>Service tests</td><td>Usage, Content, Quality tabs; Wilson CI bars, chi-square panel, novelty trend, entropy, MRR, correlation</td></tr>
+  <tr><td>Notifications</td><td class="tick">100%</td><td>Scheduler tests</td><td>In-app notifications + email (console backend in dev), reminder schedule</td></tr>
+  <tr><td>Settings</td><td class="tick">100%</td><td>UI verified</td><td>Voice, banned words, emoji, length, lead time, variety slider, pause learning, audience CRUD, export, delete</td></tr>
+</table>
+
+<h2 class="pb">4. Quality assurance</h2>
+<table>
+  <tr><th style="width:30%">Suite</th><th style="width:12%">Count</th><th>Coverage</th></tr>
+  <tr><td><code>test_math.py</code></td><td>35</td><td>Every golden value in Section 17: feature/score vector, gradient steps (w_N→0.161, w_P→0.195, w_L→0.094), MMR order [A,C,F], Wilson CI (3,10)=(0.108,0.603), choice probabilities ≈[0.46,0.34,0.20]</td></tr>
+  <tr><td><code>test_pipeline.py</code></td><td>12</td><td>Hard constraints, length limits, banned words, dedup, arm-aware MMR diversity, seeded confidence, stage payload shape</td></tr>
+  <tr><td><code>test_api.py</code></td><td>journey</td><td>Register → plan → generate (202 + poll) → feedback → approve → analytics, run against a live TestClient</td></tr>
+  <tr><td><code>test_scheduler.py</code></td><td>4</td><td>Reminder days, idempotent cycle preparation, catch-up after missed runs, plan auto-extension</td></tr>
+  <tr><td><b>Total</b></td><td><b>62</b></td><td><b>All passing</b></td></tr>
+</table>
+<table>
+  <tr><th style="width:30%">Gate</th><th>Result</th></tr>
+  <tr><td>Backend tests</td><td class="tick">62/62 pass</td></tr>
+  <tr><td>TypeScript typecheck</td><td class="tick">0 errors</td></tr>
+  <tr><td>ESLint (via next build)</td><td class="tick">0 warnings</td></tr>
+  <tr><td>Production build</td><td class="tick">15 routes built, ~88 kB shared JS</td></tr>
+  <tr><td>Notebooks</td><td class="tick">4/4 execute without error</td></tr>
+  <tr><td>Browser end-to-end</td><td class="tick">Login → dashboard → review → like → 200 OK confirmed live</td></tr>
+  <tr><td>CI pipeline</td><td class="tick">GitHub Actions: pytest on 3.10 + 3.11, frontend typecheck + build</td></tr>
+</table>
+
+<h2>5. Bugs found and fixed during development</h2>
+<p>A deliberately test-driven build: these were caught by the golden tests or live verification and fixed.</p>
+<table>
+  <tr><th style="width:36%">Issue</th><th>Resolution</th></tr>
+  <tr><td>SQLAlchemy enum column receiving a Python enum object</td><td>Pass the portable string value through the <code>SAEnum</code> converter</td></tr>
+  <tr><td>FastAPI asserted on <code>-> None</code> response annotations</td><td>Removed the annotations (204 responses)</td></tr>
+  <tr><td>Naive/aware datetime mixing from SQLite</td><td>Added a <code>UTCDateTime</code> TypeDecorator, applied to 20 columns</td></tr>
+  <tr><td>ICS generation overflowed the hour on all-day events</td><td>Replaced <code>start + timedelta(hours=1)</code> with a bounded end time</td></tr>
+  <tr><td>Generated candidates were never embedded → similarity always 0</td><td>Embed each candidate in <code>_make_candidate</code></td></tr>
+  <tr><td>Ambiguous truth value on a NumPy blob comparison</td><td>Explicit <code>is not None</code> guard (fixed twice — regression caught by tests)</td></tr>
+  <tr><td><code>data_dir</code> resolved to <code>backend/data</code> instead of repo root</td><td>Anchored to the repository root in both config and templates (fixed twice)</td></tr>
+  <tr><td>Cycle horizon off-by-one when filling 12 cycles</td><td>Loop to <code>CYCLE_HORIZON+1</code>, break when full</td></tr>
+  <tr><td>MMR could return two candidates from the same style arm</td><td>Added a <code>groups</code> parameter preferring unrepresented arms</td></tr>
+  <tr><td>Weight sanitizer did not converge to bounds</td><td>Iterative clip + renormalise loop</td></tr>
+  <tr><td>Frontend: 4 TypeScript errors, 18 unused-import lint errors</td><td>Fixed; typecheck and build now clean</td></tr>
+  <tr><td><b>Live-session bugs</b></td><td></td></tr>
+  <tr><td>Review screen showed "nothing to review" despite an awaiting cycle</td><td>A stale pre-restart uvicorn process was serving old code; restarted with current code</td></tr>
+  <tr><td>Silent token refresh failed after 15 minutes → 401 on feedback</td><td>API base used <code>127.0.0.1</code> while the page is <code>localhost</code> (different <i>site</i>, so the <code>SameSite=Lax</code> refresh cookie was never sent). Switched to <code>localhost</code> and made the cookie <code>None+Secure</code> under <code>MM_ENVIRONMENT=production</code> for cross-domain hosting</td></tr>
+</table>
+
+<h2 class="pb">6. Documented deviations from the blueprint</h2>
+<table>
+  <tr><th style="width:26%">Blueprint recommendation</th><th style="width:30%">Shipped instead</th><th>Reason</th></tr>
+  <tr><td>PostgreSQL + pgvector</td><td>SQLite default, Postgres-ready</td><td>No Docker/Postgres on the target machine; one env var switches and the schema + tests are identical</td></tr>
+  <tr><td>sentence-transformers embeddings</td><td>Own 384-d hashing embedder, MiniLM optional</td><td>Instant startup, offline, deterministic; same dimensionality so every formula and golden test is unchanged</td></tr>
+  <tr><td>spaCy + YAKE preprocessing</td><td>Own <code>text.py</code> (spaCy as an optional extra)</td><td>Heavy native dependencies; the needed operations are small, testable in isolation</td></tr>
+  <tr><td>shadcn/ui components</td><td>Own component library on Tailwind tokens</td><td>Fewer moving parts, exact control of the design tokens, no CLI-generated drift</td></tr>
+  <tr><td>Hosted LLM in the hot path</td><td>Template engine as the default provider</td><td>Zero-cost, always-available demo; hosted adapters retain retry, breaker and cost metering for production</td></tr>
+</table>
+
+<h2>7. Repository &amp; deliverables</h2>
+<ul>
+  <li><b>GitHub:</b> <code>https://github.com/vxrsha1501/monthly-muse</code> — branch <code>main</code>, 119 files, clean working tree.</li>
+  <li><b>Documentation:</b> README (quickstart + config matrix), <code>docs/api.md</code> (generated from the live route table), <code>docs/tech-stack.pdf</code> (9-page stack reference), this report.</li>
+  <li><b>DevOps:</b> <code>backend/Dockerfile</code>, <code>frontend/Dockerfile</code>, <code>docker-compose.yml</code> (Postgres + API + worker + frontend), <code>.github/workflows/ci.yml</code>.</li>
+  <li><b>Seed data:</b> 60 occasions, 20 topics, 40 templates, 800-row tone training set, and a demo account
+      (<code>demo@monthlymuse.app</code> / <code>monthlymuse-demo</code>) with two published months of history.</li>
+  <li><b>Notebooks:</b> cosine calibration, tone classifier, ablation study, simulated users — all execute.</li>
+</ul>
+
+<h2>8. Deployment readiness</h2>
+<p>The application is architecture-ready for a live deployment with <b>no code changes</b> — only environment variables.</p>
+<table>
+  <tr><th style="width:24%">Piece</th><th style="width:34%">Target</th><th>Notes</th></tr>
+  <tr><td>Database</td><td>Render Postgres (or Neon)</td><td>Set <code>MM_DATABASE_URL</code> to the managed connection string; schema is already portable</td></tr>
+  <tr><td>API service</td><td>Render web service (Docker)</td><td>Start command <code>uvicorn app.main:app --host 0.0.0.0 --port $PORT</code>; set <code>MM_ENVIRONMENT=production</code> and a strong <code>MM_SECRET_KEY</code></td></tr>
+  <tr><td>Worker service</td><td>Render web service (Docker)</td><td><code>while true; do python -m app.scheduler.runner; sleep 300; done</code> so free-tier sleep cannot skip the daily run</td></tr>
+  <tr><td>Frontend</td><td>Vercel or Render</td><td>Set <code>NEXT_PUBLIC_API_URL</code> to the live API origin</td></tr>
+  <tr><td>Secrets</td><td>Platform env vars</td><td>Never committed; the repo contains no secrets</td></tr>
+</table>
+<div class="note">
+<b>Known constraint:</b> free-tier web services sleep after ~15 minutes of inactivity, which is why the
+worker runs in a restart loop — the scheduler's daily preparation is idempotent, so a sleeping and
+waking worker cannot duplicate a cycle or a reminder.
+</div>
+
+<h2 class="pb">9. Remaining work</h2>
+<table>
+  <tr><th style="width:44%">Item</th><th>Priority</th></tr>
+  <tr><td>Perform the live deployment (Render + Postgres + Vercel) and verify the demo account online</td><td>Next — accounts exist, configuration is ready</td></tr>
+  <tr><td>Add a Playwright end-to-end test covering login → review → select → analytics</td><td>Medium — the API journey is already covered</td></tr>
+  <tr><td>Connect a hosted LLM key (OpenAI / Ollama) so candidates are LLM-written</td><td>Medium — adapters are built and tested; only the key and env var are needed</td></tr>
+  <tr><td>Polish offline template wording (minor grammatical artefacts in generated copy)</td><td>Low — affects the template fallback only</td></tr>
+  <tr><td>Version 2 items (§15.2): platform publisher, engagement import, teams, dark mode, autopilot</td><td>Out of MVP scope</td></tr>
+</table>
+
+<div class="footer">MonthlyMuse · Project Progress Report · 62 tests · 58 endpoints · 16 tables · 12 screens · 119 files</div>
+
+</body>
+</html>

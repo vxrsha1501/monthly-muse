@@ -14,7 +14,9 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -25,13 +27,14 @@ services:
       MM_CORS_ORIGINS: http://localhost:3000
       MM_SCHEDULER_ENABLED: "false"   # the worker service runs the scheduler
     volumes:
-      - ./data:/srv/data:ro
-      - backend_data:/data
+      - ./data:/data:ro
     ports:
       - "8000:8000"
 
   worker:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     command: ["python", "-m", "app.scheduler.runner"]
     depends_on:
       - backend
@@ -42,8 +45,7 @@ services:
       MM_SCHEDULER_ENABLED: "true"
       MM_SCHEDULER_TIMEZONE: Asia/Kolkata
     volumes:
-      - ./data:/srv/data:ro
-      - backend_data:/data
+      - ./data:/data:ro
 
   frontend:
     build: ./frontend
@@ -56,4 +58,3 @@ services:
 
 volumes:
   pgdata:
-  backend_data:

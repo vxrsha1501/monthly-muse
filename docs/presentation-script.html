@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>MonthlyMuse — Presentation Script (2 Speakers)</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  html { background: #FFFFFF; color-scheme: light only; }
+  * { box-sizing: border-box; }
+  body { font-family: "Segoe UI", Inter, system-ui, -apple-system, sans-serif; color: #0F172A;
+         font-size: 10.5pt; line-height: 1.6; margin: 0; background: #FFFFFF; }
+  h1 { font-size: 23pt; margin: 0 0 4px; letter-spacing: -0.5px; }
+  h2 { font-size: 14pt; margin: 24px 0 8px; padding-bottom: 4px; border-bottom: 2px solid #4F46E5;
+       color: #312E81; page-break-after: avoid; }
+  .subtitle { color: #475569; font-size: 11.5pt; margin: 2px 0 14px; }
+  .meta { color: #64748B; font-size: 9pt; margin-bottom: 16px; }
+  p, li { margin: 5px 0; }
+  ul, ol { padding-left: 20px; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9pt; }
+  th { background: #4F46E5; color: #fff; text-align: left; padding: 6px 8px; font-weight: 600; }
+  td { border-bottom: 1px solid #E2E8F0; padding: 5px 8px; vertical-align: top; }
+  tr:nth-child(even) td { background: #F8FAFC; }
+  code { font-family: "Cascadia Mono", Consolas, monospace; font-size: 9pt; background: #F1F5F9;
+         padding: 1px 4px; border-radius: 3px; }
+  .slide { border: 1.5px solid #E2E8F0; border-radius: 10px; padding: 12px 14px; margin: 12px 0;
+           page-break-inside: avoid; background: #fff; }
+  .slide h3 { margin: 0 0 2px; font-size: 12.5pt; color: #312E81; }
+  .slide .cue { font-size: 8.5pt; color: #64748B; margin-bottom: 8px;
+                display: flex; justify-content: space-between; }
+  .who { display: inline-block; border-radius: 999px; padding: 1px 10px; font-size: 8.5pt;
+         font-weight: 700; letter-spacing: .4px; }
+  .a { background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE; }
+  .b { background: #ECFDF5; color: #065F46; border: 1px solid #A7F3D0; }
+  .say { background: #F8FAFC; border-left: 4px solid #4F46E5; padding: 9px 12px;
+         border-radius: 0 8px 8px 0; margin: 6px 0; font-size: 10.5pt; }
+  .say.bline { border-left-color: #059669; }
+  .stage { background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 7px 11px;
+           border-radius: 0 6px 6px 0; font-size: 9.5pt; margin: 6px 0; }
+  .timing { display: inline-block; background: #0F172A; color: #fff; border-radius: 4px;
+            padding: 0 7px; font-size: 8.5pt; font-family: Consolas, monospace; }
+  .note { background: #FFFBEB; border-left: 4px solid #F59E0B; padding: 7px 11px;
+          border-radius: 0 6px 6px 0; font-size: 9.5pt; margin: 10px 0; }
+  .pb { page-break-before: always; }
+  .footer { color: #94A3B8; font-size: 8.5pt; margin-top: 22px; border-top: 1px solid #E2E8F0; padding-top: 6px; }
+  .tag { display: inline-block; background: #EEF2FF; color: #3730A3; border: 1px solid #C7D2FE;
+         border-radius: 999px; padding: 1px 9px; font-size: 8.5pt; margin-right: 5px; }
+</style>
+</head>
+<body>
+
+<h1>MonthlyMuse</h1>
+<div class="subtitle">Presentation script — two speakers</div>
+<div class="meta">AI-Powered Automated Message Generator for Monthly Posting · ~14 minutes + Q&amp;A ·
+<strong>Speaker A</strong> (blue shirt) opens and handles architecture / engineering ·
+<strong>Speaker B</strong> (green shirt) handles the AI maths and runs the live demo</div>
+
+<p>
+<span class="tag">14 slides</span><span class="tag">14 minutes</span><span class="tag">live demo built in</span>
+<span class="tag">alternating speakers</span><span class="tag">Q&amp;A prep included</span>
+</p>
+
+<h2>How to use this script</h2>
+<ul>
+  <li>Text inside a coloured box is <b>verbatim</b> — say it as written or in your own words; the meaning must stay.</li>
+  <li><span class="who a">SPEAKER A</span> and <span class="who b">SPEAKER B</span> mark who owns the slide.</li>
+  <li><b>Handoff lines</b> (in yellow) are spoken by the named speaker to pass the floor — say them out loud so the audience knows who is talking next.</li>
+  <li>Timings are cumulative from the start. Keep to them; if you run long, trim the roadmap slide, never the demo.</li>
+  <li>Run the demo on <code>http://localhost:3000</code> with the seeded account
+      <code>demo@monthlymuse.app</code> / <code>monthlymuse-demo</code>.</li>
+</ul>
+
+<div class="note">
+<b>Rehearsal tip:</b> practise the demo transitions once with the site open. The dashboard already shows
+"November post ready for review (3 candidates)", so the demo starts one click from the review screen.
+</div>
+
+<h2 class="pb">Slide 1 — Title <span class="timing">0:00 – 0:30</span></h2>
+<div class="slide">
+  <h3>MonthlyMuse — AI-Powered Automated Message Generator for Monthly Posting</h3>
+  <div class="cue"><span>Opening</span><span>0:30</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"Good morning everyone. This is MonthlyMuse — a web application that prepares your
+  monthly social post <i>before you even ask for it</i>. You define a monthly plan once, and every month
+  the system drafts six candidate messages, ranks them with our own NLP engine, and hands you the best
+  three with a transparent explanation of why they ranked where they did."</div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"Everything you'll see today is built and running — sixty-two automated tests
+  pass, and we'll be demoing the live application, not slides of it."</div>
+  <div class="stage"><b>Handoff — A:</b> "To understand why this is worth building, let's start with the problem."</div>
+</div>
+
+<h2>Slide 2 — The problem <span class="timing">0:30 – 1:30</span></h2>
+<div class="slide">
+  <h3>Small businesses post monthly — and struggle every time</h3>
+  <div class="cue"><span>Context</span><span>1:30</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"Think about a small café, a salon, or a tutor. They know they should post once a
+  month. But on the day, they face a blank box: what do I write, does it sound like me, have I already
+  said this last month? The result is either no post, or a generic one that doesn't sound like their
+  brand."</div>
+  <div class="say">"Existing AI writers give you one shot and no explanation. You get a paragraph, you
+  don't know why it was chosen, and next month the tool has forgotten everything you liked. Nothing
+  compounds."</div>
+  <div class="stage"><b>Handoff — A:</b> "So our goal was specific. B will explain it."</div>
+</div>
+
+<h2>Slide 3 — The goal <span class="timing">1:30 – 2:15</span></h2>
+<div class="slide">
+  <h3>Goal: prepare, don't react — and prove it improves</h3>
+  <div class="cue"><span>Objective</span><span>2:15</span></div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"Our goal in one sentence: the system should prepare the monthly post
+  <i>before</i> the user asks, show three genuinely different candidates with a visible score breakdown,
+  and then measurably improve from every choice the user makes."</div>
+  <div class="say bline">"Three promises. <b>Automatic</b> — a scheduler, not a reminder. <b>Transparent</b>
+  — you can see every feature that produced the score. And <b>adaptive</b> — your selection changes next
+  month's output."</div>
+  <div class="stage"><b>Handoff — B:</b> "Here's what that looks like. A takes you through the flow."</div>
+</div>
+
+<h2>Slide 4 — How it works (user flow) <span class="timing">2:15 – 3:15</span></h2>
+<div class="slide">
+  <h3>The monthly loop</h3>
+  <div class="cue"><span>Product flow</span><span>3:15</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"The loop is short. First, you create a <b>Monthly Plan</b> — topic, audience,
+  platform, tone, posting day. Then the scheduler detects the upcoming month, pulls the relevant
+  occasion — Diwali, a seasonal moment — and runs the pipeline automatically."</div>
+  <div class="say">"You get a notification: three ranked candidates are waiting. You open the review
+  screen, pick one, edit one, or reject one with a reason. You approve it, it lands in the calendar,
+  and it's marked published."</div>
+  <div class="say">"Every one of those actions is recorded as a feedback event. That's where the
+  learning starts."</div>
+  <div class="stage"><b>Handoff — A:</b> "But behind that simple loop sits a fairly serious engine. B."</div>
+</div>
+
+<h2 class="pb">Slide 5 — Architecture <span class="timing">3:15 – 4:30</span></h2>
+<div class="slide">
+  <h3>System architecture — three pieces, one database</h3>
+  <div class="cue"><span>Engineering</span><span>4:30</span></div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"The system is three pieces. A <b>Next.js 14 frontend</b> that only ever talks
+  to the public API — no secrets in the browser. A <b>FastAPI backend</b> with fifty-eight endpoints
+  covering auth, plans, cycles, messages, analytics and the calendar."</div>
+  <div class="say bline">"And a <b>scheduler worker</b> running on APScheduler, sharing the same code and
+  the same database but started with a different command. The API is stateless, so it can be scaled by
+  just adding instances."</div>
+  <div class="say bline">"Underneath is a <b>sixteen-table schema</b>: users, preferences, audiences,
+  topics, occasions, plans, cycles, generation requests, messages, feedback events, tone statistics,
+  scheduled posts, metrics, notifications, job runs, and a daily analytics rollup."</div>
+  <div class="stage"><b>Handoff — B:</b> "The interesting part is what runs inside that backend. A."</div>
+</div>
+
+<h2>Slide 6 — The AI pipeline <span class="timing">4:30 – 6:00</span></h2>
+<div class="slide">
+  <h3>Fourteen pipeline stages, in one request</h3>
+  <div class="cue"><span>Core system</span><span>6:00</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"Generation is a fourteen-stage pipeline. It starts by <b>understanding context</b> —
+  plan, audience, occasion, platform — then <b>retrieves your history</b>: your past posts, their
+  embeddings, and what you selected or rejected."</div>
+  <div class="say">"Next it picks <b>style arms</b> using Thompson sampling, then makes <b>one call</b>
+  to the language model — which over-generates <b>six</b> candidates. One call, six candidates: that's
+  deliberate, it's the cost-efficient way to have something to choose from."</div>
+  <div class="say">"Then the filter chain. <b>Hard constraints</b> — length limits per platform and
+  language, banned words, emoji level. <b>Deduplication</b> so no two candidates repeat an opening line.
+  Then everything is <b>embedded</b> with our own 384-dimensional embedder."</div>
+  <div class="say">"We compute <b>six features</b> per candidate, score them, run <b>MMR</b> to make sure
+  the final three are stylistically different, estimate <b>confidence</b>, and produce an explanation
+  payload — which is what you actually see on screen."</div>
+  <div class="stage"><b>Handoff — A:</b> "Now the maths. B."</div>
+</div>
+
+<h2>Slide 7 — The maths <span class="timing">6:00 – 7:30</span></h2>
+<div class="slide">
+  <h3>Scoring: s = F · w, then MMR, then confidence</h3>
+  <div class="cue"><span>Mathematical core</span><span>7:30</span></div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"Each candidate is a row of six features: <b>relevance, tone, personalization,
+  novelty, length</b> and <b>history</b>. The score is a dot product — <b>s equals F times w</b> — with
+  default weights of point three, point two, point two, point one five, point one and point oh five."</div>
+  <div class="say bline">"The score alone would give you three near-identical posts. So we add
+  <b>MMR</b> — maximal marginal relevance — at lambda zero point seven, which trades relevance against
+  diversity. That's why candidate three is tagged <i>'exploring a new style'</i>."</div>
+  <div class="say bline">"Confidence comes from a <b>Dirichlet Monte-Carlo simulation</b>: two hundred
+  seeded draws, so the same inputs always give the same answer. For rates in the analytics we use
+  <b>Wilson intervals</b>, because a naive percentage lies when n is small."</div>
+  <div class="stage"><b>Handoff — B:</b> "Rather than describe the output, let's show it. A drives the demo."</div>
+</div>
+
+<h2 class="pb">Slide 8 — LIVE DEMO: review screen <span class="timing">7:30 – 9:30</span></h2>
+<div class="slide">
+  <h3>Demo: three ranked candidates with score breakdowns</h3>
+  <div class="cue"><span>Live — localhost:3000</span><span>9:30</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"This is the live app. The dashboard says <i>'November post ready for review — three
+  candidates'</i>. That message came from the scheduler, not from a button press."</div>
+  <div class="stage"><b>Click → Review candidates.</b></div>
+  <div class="say">"Here are the three. Each card shows a <b>score ring</b>, a <b>confidence band</b>,
+  word and character counts, and how similar it is to your history — twenty percent, thirty-five
+  percent, fifty-three percent. All three are marked <i>Fresh</i>, so we're not repeating ourselves."</div>
+  <div class="stage"><b>Click → Score breakdown on candidate 1.</b></div>
+  <div class="say">"This is the transparency we promised. Six bars: relevance seventeen, tone thirteen,
+  personalization sixty-one, novelty eighty, length eighty-five, history sixty-seven. You can see
+  exactly which feature earned the top rank."</div>
+  <div class="say">"And this list on the left is the <b>why-ranked</b> explanation in plain English —
+  <i>'fits your usual voice at sixty-one percent'</i> and <i>'twenty percent different from your nearest
+  past post'</i> — with a link to the exact post it's being compared against."</div>
+  <div class="stage"><b>Handoff — A:</b> "Now watch what happens when we give feedback. B?"</div>
+</div>
+
+<h2>Slide 9 — LIVE DEMO: the learning loop <span class="timing">9:30 – 10:45</span></h2>
+<div class="slide">
+  <h3>Demo: one click changes the next month</h3>
+  <div class="cue"><span>Live — feedback → personalization</span><span>10:45</span></div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"I'll like this first style. Watch the network — the feedback call returns two
+  hundred OK, and the request refetches."</div>
+  <div class="stage"><b>Click → 'Like this style', then point at the Recent activity feed on the dashboard.</b></div>
+  <div class="say bline">"That single click updated four things at once. It moved the <b>preference
+  vector</b> with an exponential moving average. It updated the <b>Beta statistics</b> for that style arm,
+  so Thompson sampling will favour it next time. It nudged the <b>weight vector</b> with a constrained
+  gradient step. And it updated your <b>tone counts</b>."</div>
+  <div class="say bline">"Reject does the same thing with a reason attached — if you reject for
+  <i>'too similar'</i>, the novelty weight goes up. That's the difference between a generator and a
+  system that learns."</div>
+  <div class="stage"><b>Handoff — B:</b> "A shows where that shows up over time."</div>
+</div>
+
+<h2>Slide 10 — Analytics <span class="timing">10:45 – 11:45</span></h2>
+<div class="slide">
+  <h3>Analytics: proving the improvement</h3>
+  <div class="cue"><span>Evaluation</span><span>11:45</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"Three dashboards. <b>Usage</b> — how many messages generated, time to approve.
+  <b>Content</b> — tone mix, topic distribution, novelty trend across months, and a repetition alert
+  that fires when two posts are more than eighty-five percent similar."</div>
+  <div class="say">"And <b>Quality</b> — selection rate with a Wilson confidence interval, top-one
+  agreement, mean reciprocal rank, and the correlation between score and what you actually chose."</div>
+  <div class="say">"Right now: nine messages generated, twenty-two percent selection rate with a
+  ninety-five percent interval of six to fifty-five percent. The interval is wide because n is nine —
+  which is exactly why we show it."</div>
+  <div class="stage"><b>Handoff — A:</b> "B takes the technology summary."</div>
+</div>
+
+<h2 class="pb">Slide 11 — Technology stack <span class="timing">11:45 – 12:45</span></h2>
+<div class="slide">
+  <h3>Technology stack</h3>
+  <div class="cue"><span>Engineering choices</span><span>12:45</span></div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"<b>FastAPI</b> on Python 3.10 with Pydantic for validation, <b>SQLAlchemy 2</b>
+  over SQLite by default — swap one environment variable and it's PostgreSQL."</div>
+  <div class="say bline">"The AI engine is <b>pure NumPy and SciPy</b> — no GPU, no heavy framework. Our
+  own 384-dimensional embedding, our own preprocessing, our own logistic-regression tone classifier
+  trained on eight hundred labelled rows."</div>
+  <div class="say bline">"Generation sits behind an <b>adapter</b> — template, OpenAI, Anthropic or
+  Ollama — with retry, a circuit breaker and cost metering. The template engine is the default, so the
+  demo works offline with zero API cost."</div>
+  <div class="say bline">"On the front, <b>Next.js 14</b> with TypeScript, TanStack Query, React Hook
+  Form with Zod, and Recharts for the visualisations."</div>
+  <div class="stage"><b>Handoff — B:</b> "A on quality."</div>
+</div>
+
+<h2>Slide 12 — Quality &amp; testing <span class="timing">12:45 – 13:30</span></h2>
+<div class="slide">
+  <h3>Quality: 62 tests, including every golden value</h3>
+  <div class="cue"><span>Verification</span><span>13:30</span></div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"Sixty-two tests, all passing. Thirty-five of them are <b>golden-value tests</b> —
+  we wrote down the expected number first, then made the code produce it. The gradient step lands on
+  exactly 0.161, the Wilson interval for three successes in ten trials is 0.108 to 0.603, and the MMR
+  picks candidates A, C and F."</div>
+  <div class="say">"Beyond that: twelve pipeline tests for the constraints, a full API journey test,
+  and four scheduler automation tests. Type-checking and the production build are clean, and the whole
+  thing runs in CI on Python 3.10 and 3.11."</div>
+  <div class="stage"><b>Handoff — A:</b> "B finishes."</div>
+</div>
+
+<h2>Slide 13 — Live now &amp; what's next <span class="timing">13:30 – 14:00</span></h2>
+<div class="slide">
+  <h3>Where it stands, and what's next</h3>
+  <div class="cue"><span>Closing</span><span>14:00</span></div>
+  <span class="who b">SPEAKER B</span>
+  <div class="say bline">"The MVP is <b>complete</b> — every row of the scope is built, tested and
+  running. The code is on GitHub, there's Docker Compose for the full stack, a CI pipeline, and a
+  nine-page technology document."</div>
+  <div class="say bline">"Next: deploying it live on Render with managed Postgres, connecting a hosted
+  language model so the copy is AI-written rather than template-written, and adding a browser
+  end-to-end test."</div>
+  <span class="who a">SPEAKER A</span>
+  <div class="say">"To leave you with the one idea: this isn't a text box with an API behind it. It's a
+  system that prepares, explains itself, and gets measurably better every month you use it."</div>
+  <div class="say"><b>"Thank you — we're happy to take questions."</b></div>
+</div>
+
+<h2 class="pb">Slide 14 — Q&amp;A preparation</h2>
+<p>Anticipated questions, with the suggested answer and who should take it.</p>
+<table>
+  <tr><th style="width:26%">Question</th><th style="width:10%">Who</th><th>Suggested answer</th></tr>
+  <tr><td>Why is the generated text a bit awkward?</td><td>A</td><td>"The demo runs on the offline template engine so it costs nothing and works without keys. The OpenAI/Anthropic/Ollama adapters are built and tested — we add a key and the same six candidates come from a real model. Everything downstream — scoring, ranking, personalization — is identical."</td></tr>
+  <tr><td>Why not just use ChatGPT?</td><td>B</td><td>"A single model call gives you one answer with no ranking and no memory. We over-generate six, then filter, embed, score and diversify with our own engine — and every user action feeds back into next month's ranking. The model is one component, not the product."</td></tr>
+  <tr><td>How is this different from a prompt?</td><td>B</td><td>"A prompt has no state. Ours has a preference vector, Beta statistics per style arm, learned length stats and a weight vector that updates with a constrained gradient step — all visible in Settings."</td></tr>
+  <tr><td>Is it really automatic?</td><td>A</td><td>"Yes — APScheduler runs a daily scan, creates the cycle for the upcoming month, gathers the occasion context, generates, and notifies at T-3 and T-1 days. Preparation is idempotent, so a restart can't duplicate anything."</td></tr>
+  <tr><td>Why SQLite and not PostgreSQL?</td><td>A</td><td>"The target machine has no Docker or Postgres. The schema is portable — string enums, UTC-normalised timestamps, vectors as float32 blobs — so setting <code>MM_DATABASE_URL</code> to a managed Postgres is the only change. That's the deployment plan."</td></tr>
+  <tr><td>Isn't 22% selection rate low?</td><td>B</td><td>"n is nine, so the Wilson interval is six to fifty-five percent — too early to read as a quality signal. It's also counting 'left unselected' events. The metric exists precisely so we don't over-claim from small numbers."</td></tr>
+  <tr><td>How do you stop it repeating itself?</td><td>B</td><td>"Three ways: n-gram Jaccard deduplication at generation, cosine similarity against your full history with a novelty feature in the score, and MMR so the three shown are stylistically distinct. There's also a repetition alert in analytics at cosine 0.85."</td></tr>
+  <tr><td>What about privacy / API keys in the browser?</td><td>A</td><td>"The frontend only calls the public API and holds no secrets. Refresh tokens are httpOnly cookies; passwords are Argon2id. Secrets live in platform environment variables, never in the repository."</td></tr>
+  <tr><td>What's the hardest part you'd redo?</td><td>Either</td><td>"Getting the golden tests written first. Several real bugs — candidates never being embedded, a naive/aware datetime mix, MMR returning two candidates from the same style arm — were caught by those tests before they could reach the UI."</td></tr>
+  <tr><td>Can it handle multiple users?</td><td>A</td><td>"Yes — every query is scoped to the authenticated user, there's per-user rate limiting, and the API is stateless so instances can be added behind a load balancer. The scheduler worker is separate and shares only the database."</td></tr>
+</table>
+
+<h2>Timing summary</h2>
+<table>
+  <tr><th>Slide</th><th>Topic</th><th>Speaker</th><th>Cumulative</th></tr>
+  <tr><td>1</td><td>Title</td><td>A then B</td><td>0:30</td></tr>
+  <tr><td>2</td><td>The problem</td><td>A</td><td>1:30</td></tr>
+  <tr><td>3</td><td>The goal</td><td>B</td><td>2:15</td></tr>
+  <tr><td>4</td><td>User flow</td><td>A</td><td>3:15</td></tr>
+  <tr><td>5</td><td>Architecture</td><td>B</td><td>4:30</td></tr>
+  <tr><td>6</td><td>AI pipeline (14 stages)</td><td>A</td><td>6:00</td></tr>
+  <tr><td>7</td><td>The maths</td><td>B</td><td>7:30</td></tr>
+  <tr><td>8</td><td><b>Demo — review screen</b></td><td>A</td><td>9:30</td></tr>
+  <tr><td>9</td><td><b>Demo — learning loop</b></td><td>B</td><td>10:45</td></tr>
+  <tr><td>10</td><td>Analytics</td><td>A</td><td>11:45</td></tr>
+  <tr><td>11</td><td>Tech stack</td><td>B</td><td>12:45</td></tr>
+  <tr><td>12</td><td>Quality &amp; tests</td><td>A</td><td>13:30</td></tr>
+  <tr><td>13</td><td>Live &amp; next steps</td><td>B then A</td><td>14:00</td></tr>
+  <tr><td>14</td><td>Q&amp;A</td><td>both</td><td>—</td></tr>
+</table>
+
+<div class="footer">MonthlyMuse · Presentation script for two speakers · 14 slides · 14 minutes · based on the Project Progress Report</div>
+
+</body>
+</html>
