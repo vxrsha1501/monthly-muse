@@ -7,6 +7,11 @@ import { Sparkles } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { ApiError } from "@/lib/api";
 
+const DEMO_ACCOUNTS = [
+  { label: "Cafe", email: "demo@monthlymuse.app", password: "monthlymuse-demo" },
+  { label: "Consulting", email: "pro@monthlymuse.app", password: "monthlymuse-pro" },
+];
+
 export default function LoginPage() {
   const { login } = useAuth();
   const router = useRouter();
@@ -66,10 +71,25 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-5 rounded-input bg-canvas border border-line p-3">
-            <p className="text-small text-muted">
-              Demo account: <span className="font-mono text-ink">demo@monthlymuse.app</span> /{" "}
-              <span className="font-mono text-ink">monthlymuse-demo</span>
-            </p>
+            <p className="text-small text-muted mb-1.5">Demo accounts (click to fill):</p>
+            <ul className="space-y-1">
+              {DEMO_ACCOUNTS.map((acct) => (
+                <li key={acct.email}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEmail(acct.email);
+                      setPassword(acct.password);
+                      setError(null);
+                    }}
+                    className="w-full text-left rounded-lg border border-transparent px-2.5 py-2 text-body text-ink transition-colors hover:bg-white hover:border-line"
+                  >
+                    <span className="font-medium">{acct.label}:</span>{" "}
+                    <span className="font-mono text-small">{acct.email}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <p className="text-body text-muted mt-5 text-center">
