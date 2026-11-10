@@ -48,16 +48,23 @@ class Base(DeclarativeBase):
     pass
 
 
+DATABASE_URL = settings.resolved_database_url
+
+
 def _engine_kwargs() -> dict:
     kwargs: dict = {"pool_pre_ping": True}
-    if settings.database_url.startswith("sqlite"):
+    if DATABASE_URL.startswith("sqlite"):
         kwargs["connect_args"] = {"check_same_thread": False}
+    else:
+        # Managed/serverless Postgres (Neon) closes idle connections; recycle
+        # well before the provider's idle timeout instead of surfacing errors.
+        kwargs.update({"pool_recycle": 300, "pool_size": 5, "max_overflow": 5})
     return kwargs
 
 
-engine = create_engine(settings.database_url, **_engine_kwargs())
+engine = create_engine(DATABASE_URL, **_engine_kwargs())
 
-if settings.database_url.startswith("sqlite"):
+if DATABASE_URL.startswith("sqlite"):
 
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragma(dbapi_connection, _record) -> None:  # pragma: no cover

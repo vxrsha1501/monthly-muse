@@ -68,10 +68,17 @@ def dashboard(db: Session, user: User) -> DashboardOut:
         )
     elif future:
         nxt = future[0]
+        # POST_DATE vs PREPARATION_DATE (generate_at = post_at - lead, default 7
+        # days) - both straight from the cycle row the scheduler actually uses.
+        if nxt.generate_at <= now:
+            subtitle = (f"Next post: {nxt.post_at.strftime('%d %B')}. Preparation was due "
+                        f"{nxt.generate_at.strftime('%d %b')} - it runs on the next check.")
+        else:
+            subtitle = (f"Next post: {nxt.post_at.strftime('%d %B')}. We'll prepare it on "
+                        f"{nxt.generate_at.strftime('%d %b')}.")
         next_action = NextAction(
             title="You're all set.",
-            subtitle=f"Next post: {nxt.post_at.strftime('%d %B')}. We'll prepare it on "
-                     f"{nxt.generate_at.strftime('%d %b')}.",
+            subtitle=subtitle,
             cta_label="View calendar", cta_href="/calendar", status=nxt.status.value,
         )
     else:

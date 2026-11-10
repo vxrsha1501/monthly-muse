@@ -22,7 +22,7 @@ const planSchema = z.object({
   cta_text: z.string().max(200).nullable(),
   keywords: z.string(),
   post_day: z.coerce.number().min(1).max(28),
-  lead_days: z.coerce.number().min(0).max(28),
+  lead_days: z.coerce.number().min(1).max(28),
 });
 
 type PlanForm = z.infer<typeof planSchema>;
@@ -236,7 +236,7 @@ export default function PlansPage() {
             </div>
             <div>
               <label className="label" htmlFor="plan-lead">Lead days</label>
-              <input id="plan-lead" type="number" min={0} max={28} className="input" {...register("lead_days")} />
+              <input id="plan-lead" type="number" min={1} max={28} className="input" {...register("lead_days")} />
               <p className="helper">Generate this many days ahead.</p>
             </div>
             <div>

@@ -1,20 +1,30 @@
 """Calendar .ics export, notifications and admin job monitoring."""
 from __future__ import annotations
 
+import hmac
+import logging
+import threading
 from datetime import datetime, timedelta, timezone
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, Header, Query, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.deps import get_admin_user, get_current_user, get_db
-from app.core.errors import NotFound
+from app.core.errors import AppError, Conflict, NotFound, Unauthorized
 from app.core.security import create_ics_token, decode_token
 from app.db.models import JobRun, MonthlyPlan, Notification, PostCycle, User
 from app.schemas.analytics import NotificationOut
 from app.services import notification_service, plan_service
 
+logger = logging.getLogger("monthlymuse.misc")
+
 router = APIRouter(tags=["calendar", "notifications", "admin"])
+
+# One tick at a time: concurrent cron calls get 409 instead of racing; inside
+# the tick, job idempotency (existing request/cycle checks) prevents duplicates.
+_scheduler_lock = threading.Lock()
 
 
 # --------------------------------------------------------------- .ics feed
@@ -101,6 +111,72 @@ def admin_jobs(limit: int = 50, admin: User = Depends(get_admin_user),
                       "duration_ms": r.duration_ms, "error": r.error} for r in rows]}
 
 
+# --------------------------------------------------------------- scheduler webhook
+@router.post("/admin/scheduler/run")
+def run_scheduler_tick(
+    request: Request,
+    db: Session = Depends(get_db),
+    x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
+) -> dict:
+    """Authenticated external-cron entry point (review P12 / Priority 16).
+
+    Serverless hosts suspend APScheduler, so an outside cron pokes this endpoint
+    every few minutes.  It is authenticated with a constant-time-compared shared
+    secret (``MM_SCHEDULER_WEBHOOK_TOKEN``, derived from the secret key when not
+    set), runs the normal idempotent tick (due-cycle detection -> generation ->
+    reminders -> audit rows), and refuses concurrent invocations with 409.
+    Repeated calls are safe: a cycle that already has a queued/running/done
+    scheduled request is never generated twice.
+    """
+    auth_header = request.headers.get("Authorization", "")
+    bearer = auth_header[7:] if auth_header[:7].lower() == "bearer " else ""
+    provided = x_webhook_token or bearer
+    expected = settings.scheduler_token
+    if not provided or not hmac.compare_digest(str(provided), expected):
+        raise Unauthorized("Invalid scheduler token")
+
+    if not _scheduler_lock.acquire(blocking=False):
+        raise Conflict("A scheduler tick is already running")
+    try:
+        from app.scheduler.jobs import run_all
+        result = run_all()
+        rows = list(db.scalars(select(JobRun).order_by(JobRun.started_at.desc()).limit(5)).all())
+        logger.info("scheduler_webhook_tick prepared=%s failed=%s reminders=%s",
+                    result.get("prepared"), result.get("failed"), result.get("reminders"))
+        return {
+            "status": "ok",
+            "result": result,
+            "jobs": [{"job_name": r.job_name, "status": r.status.value,
+                      "started_at": r.started_at.isoformat(),
+                      "duration_ms": r.duration_ms, "error": r.error} for r in rows],
+        }
+    except AppError:
+        raise
+    except Exception as exc:  # noqa: BLE001 - boundary: report failures usefully
+        logger.exception("scheduler_webhook_failed")
+        raise AppError("scheduler_failed", f"Scheduler tick failed: {str(exc)[:200]}", 500)
+    finally:
+        _scheduler_lock.release()
+
+
+@router.post("/admin/seed-demos")
+def seed_demos(db: Session = Depends(get_db),
+               x_webhook_token: str | None = Header(default=None, alias="X-Webhook-Token"),
+               authorization: str | None = Header(default=None)) -> dict:
+    """(Re)create the four demo accounts and their October history.
+
+    Hosted free tiers wipe the SQLite file on restart, so this is also called
+    automatically at start-up. Authenticated with the scheduler token so it can
+    be triggered from outside without exposing account data.
+    """
+    bearer = authorization[7:] if (authorization or "")[:7].lower() == "bearer " else ""
+    provided = x_webhook_token or bearer
+    if not provided or not hmac.compare_digest(str(provided), settings.scheduler_token):
+        raise Unauthorized("Invalid seed token")
+    from app.services.demo_seed import seed_demo_accounts
+    return seed_demo_accounts(db)
+
+
 @router.get("/admin/health")
 def health(db: Session = Depends(get_db)) -> dict:
     from app.core.runtime import Runtime
@@ -116,6 +192,7 @@ def health(db: Session = Depends(get_db)) -> dict:
         "database": db_ok,
         "embedder": runtime.embedder.name if runtime.embedder else None,
         "tone_labels": len(runtime.tone_classifier.labels) if runtime.tone_classifier else 0,
-        "llm_provider": settings.llm_provider,
+        "llm_provider": settings.resolve_provider(),
+        "llm_model": settings.model_for(settings.resolve_provider()),
         "environment": settings.environment,
     }

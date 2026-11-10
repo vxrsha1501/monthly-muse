@@ -11,18 +11,16 @@ from __future__ import annotations
 import hashlib
 import logging
 import re
-
 import numpy as np
 
 logger = logging.getLogger("monthlymuse.ai")
 
 _TOKEN_RE = re.compile(r"[a-zA-Z0-9']+")
 
-# content words dominate; stopwords get a small weight so they barely move direction
-_STOP = frozenset("""
-a an the and or but if then so as of at by for with to from in on is are was were be
-it its this that i you he she we they them our your my me us not no all very can will
-""".split())
+# Stopwords get a small weight so they barely move direction
+_STOP = frozenset(
+    "a an the and or but if then so as of at by for with to from in on is are was were be "
+    "it its this that i you he she we them our you me us not no all very can will".split())
 
 
 def _hash_token(token: str, dim: int) -> tuple[int, float]:
@@ -64,7 +62,12 @@ class HashingEmbedder:
 
 
 class SentenceTransformerEmbedder:
-    """Optional, blueprint-exact embedder (all-MiniLM-L6-v2, 384-d). Loaded lazily."""
+    """Pretrained Sentence Transformers embedder (all-MiniLM-L6-v2, 384-d).
+
+    Loaded lazily and cached so the model is not re-downloaded/reloaded
+    for every request. Vectors are L2-normalised so cosine similarity is
+    a plain dot product.
+    """
 
     def __init__(self, model_name: str = "all-MiniLM-L6-v2") -> None:
         from sentence_transformers import SentenceTransformer  # optional dep
@@ -84,7 +87,7 @@ class SentenceTransformerEmbedder:
 _embedder_cache: dict[str, object] = {}
 
 
-def get_embedder(kind: str = "hash", dim: int = 384, model_name: str = "all-MiniLM-L6-v2"):
+def get_embedder(kind: str = "sentence-transformers", dim: int = 384, model_name: str = "all-MiniLM-L6-v2"):
     key = f"{kind}:{dim}:{model_name}"
     if key not in _embedder_cache:
         if kind == "sentence-transformers":

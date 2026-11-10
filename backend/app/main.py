@@ -30,6 +30,25 @@ async def lifespan(app: FastAPI):
     # models are loaded once at start-up (Section 10.2)
     from app.core.runtime import Runtime
     Runtime.init()
+    # Demo accounts + October history. Hosted free tiers have an ephemeral
+    # filesystem, so the SQLite file is wiped on every deploy/restart; seeding
+    # here is what keeps the demo accounts permanently available.
+    if settings.seed_demos_on_startup and settings.environment != "test":
+        import threading
+
+        def _seed_demos() -> None:
+            db = SessionLocal()
+            try:
+                from app.services.demo_seed import seed_demo_accounts
+                logger.info("demo_seed %s", seed_demo_accounts(db))
+            except Exception:  # noqa: BLE001 - seeding must never stop the API
+                logger.exception("demo_seed_failed")
+            finally:
+                db.close()
+
+        # Never block start-up (and the platform's health check) on seeding:
+        # each commit is a network round trip on a managed Postgres.
+        threading.Thread(target=_seed_demos, name="demo-seed", daemon=True).start()
     from app.scheduler.runner import start_in_process, stop_in_process
     start_in_process()
     logger.info("app_started env=%s provider=%s", settings.environment, settings.llm_provider)

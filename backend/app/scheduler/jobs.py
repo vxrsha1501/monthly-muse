@@ -126,8 +126,23 @@ def prepare_due_cycles(db: Session | None = None) -> dict:
     return {"prepared": prepared, "failed": failed}
 
 
+def _ensure_notification(db: Session, cycle: PostCycle, ntype: NotificationType,
+                          title: str, body: str) -> bool:
+    """Idempotent per (cycle, type, title) - T-3 and T-1 are separate rows."""
+    existing = db.scalar(select(Notification).where(
+        Notification.cycle_id == cycle.id, Notification.type == ntype,
+        Notification.title == title))
+    if existing is not None:
+        return False
+    db.add(Notification(user_id=cycle.user_id, type=ntype, title=title, body=body,
+                        cycle_id=cycle.id))
+    return True
+
+
 def send_reminders(db: Session | None = None) -> dict:
-    """Reminders at post_at - 3d and -1d; missed cycles move to NEEDS_ATTENTION (8.2 step 7)."""
+    """Reminders at POST_DATE - 3d (T-3) and POST_DATE - 1d (T-1); missed cycles
+    move to NEEDS_ATTENTION (8.2 step 7).  Both windows are measured against the
+    posting date, never against the preparation/generation date."""
     own = db is None
     db = db or SessionLocal()
     run = _start_job(db, "send_reminder")
@@ -139,18 +154,21 @@ def send_reminders(db: Session | None = None) -> dict:
             PostCycle.post_at > now)).all())
         for cycle in review:
             days_left = (cycle.post_at - now).total_seconds() / 86400
-            if days_left <= 3 or days_left <= 1:
-                wanted = NotificationType.REMINDER
-                existing = db.scalar(select(Notification).where(
-                    Notification.cycle_id == cycle.id, Notification.type == wanted))
-                if existing is None and days_left <= 3:
-                    db.add(Notification(user_id=cycle.user_id, type=wanted,
-                                        title=f"{cycle.target_month.strftime('%B')} post awaiting review",
-                                        body=f"{max(0, int(days_left))} day(s) until your posting date - "
-                                             "pick one of the three candidates.",
-                                        cycle_id=cycle.id))
+            month_label = cycle.target_month.strftime("%B")
+            if days_left <= 3:
+                if _ensure_notification(
+                        db, cycle, NotificationType.REMINDER,
+                        title=f"{month_label} post awaiting review",
+                        body=f"{max(0, int(days_left))} day(s) until your posting date - "
+                             "pick one of the three candidates."):
                     sent += 1
-                db.commit()
+            if days_left <= 1:
+                if _ensure_notification(
+                        db, cycle, NotificationType.REMINDER,
+                        title=f"{month_label} post due tomorrow",
+                        body="Your posting date is tomorrow - choose a candidate now."):
+                    sent += 1
+            db.commit()
 
         missed = list(db.scalars(select(PostCycle).where(
             PostCycle.status == CycleStatus.AWAITING_REVIEW,

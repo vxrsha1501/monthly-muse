@@ -11,7 +11,7 @@ class PreferencesIn(BaseModel):
     banned_words: list[str] = Field(default_factory=list, max_length=30)
     emoji_level: int = Field(default=1, ge=0, le=2)
     length_preset: str = "medium"
-    lead_days: int = Field(default=7, ge=0, le=28)
+    lead_days: int = Field(default=7, ge=1, le=28)
     notify_email: bool = True
     autopilot: bool = False
     learning_paused: bool = False

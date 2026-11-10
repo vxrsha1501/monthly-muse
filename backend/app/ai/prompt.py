@@ -31,9 +31,22 @@ def build_prompt(*, brief: dict, arms: list[tuple[str, str]], exemplars: list[st
     recent_line = " | ".join(recent[:6]) if recent else "(none yet)"
     exemplar_block = "\n".join(f"- {e}" for e in exemplars[:3]) if exemplars else "(none yet)"
 
+    occ_name = brief.get("occasion_name") or "none"
+    if not occ_name or occ_name == "none":
+        # No (relevant) occasion: the objective must dominate - explicitly
+        # forbid calendar mentions so a fallback/LLM cannot re-inject one.
+        occasion_line = ("Occasion: none - do NOT mention any holiday, festival, "
+                         "observance or calendar event; stay strictly on the topic.")
+    else:
+        occasion_line = f"Occasion: {occ_name} - {brief.get('occasion_fact') or '(no fact)'}"
+        if brief.get("occasion_status") == "past":
+            occasion_line += ("\nThis occasion has ALREADY PASSED: refer to it only as a "
+                              "past event or observance. Never say it is coming, arriving, "
+                              "is 'here' or happens 'this month'.")
+
     user = f"""BRIEF:
 Month: {brief.get('month')} Season: {brief.get('season')} Platform: {brief.get('platform')} Language: {brief.get('language')}
-Occasion: {brief.get('occasion_name')} - {brief.get('occasion_fact')}
+{occasion_line}
 Audience: {brief.get('audience_name')} - {brief.get('audience_description')}
 Purpose: {brief.get('purpose')} Length: {brief.get('min_words')}-{brief.get('max_words')} words
 Emoji level: {brief.get('emoji_level')}

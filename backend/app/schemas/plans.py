@@ -21,7 +21,9 @@ class PlanIn(BaseModel):
     occasion: str | None = None
     post_day: int = Field(default=1, ge=1, le=28)
     post_time: time = time(10, 0)
-    lead_days: int = Field(default=7, ge=0, le=28)
+    # >= 1: preparation must happen *before* the posting day (0 == the reported
+    # "prepare on the posting date" bug); default = the 7-day product window.
+    lead_days: int = Field(default=7, ge=1, le=28)
     is_active: bool = True
     auto_generate: bool = True
 
@@ -41,7 +43,7 @@ class PlanPatch(BaseModel):
     audience_id: str | None = None
     post_day: int | None = Field(default=None, ge=1, le=28)
     post_time: time | None = None
-    lead_days: int | None = Field(default=None, ge=0, le=28)
+    lead_days: int | None = Field(default=None, ge=1, le=28)
     is_active: bool | None = None
     auto_generate: bool | None = None
 

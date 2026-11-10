@@ -10,6 +10,8 @@ import { ApiError } from "@/lib/api";
 const DEMO_ACCOUNTS = [
   { label: "Cafe", email: "demo@monthlymuse.app", password: "monthlymuse-demo" },
   { label: "Consulting", email: "pro@monthlymuse.app", password: "monthlymuse-pro" },
+  { label: "Yoga studio", email: "studio@monthlymuse.app", password: "monthlymuse-studio" },
+  { label: "Community", email: "org@monthlymuse.app", password: "monthlymuse-org" },
 ];
 
 export default function LoginPage() {

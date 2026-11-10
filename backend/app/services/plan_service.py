@@ -18,6 +18,31 @@ logger = logging.getLogger("monthlymuse.plans")
 
 CYCLE_HORIZON = 12
 
+# The product's timing model (audit Task 7 / review P11):
+#
+#   POST_DATE (cycle.post_at)  - when the message goes live
+#   PREPARATION_DATE (cycle.generate_at) = POST_DATE - lead_days
+#
+# with lead_days defaulting to 7 ("prepare 7 days before posting").  A lead of
+# 0 would make preparation == posting - the reported bug - so it is treated as
+# invalid/legacy data and falls back to the 7-day default everywhere.
+DEFAULT_LEAD_DAYS = 7
+
+
+def effective_lead(lead_days: int | None) -> int:
+    """Normalise a lead: anything below 1 day (0, None, garbage) means the
+    intended default of 7 days, never 'same day as posting'."""
+    try:
+        value = int(lead_days)  # type: ignore[arg-type]
+    except (TypeError, ValueError):
+        value = 0
+    return value if value >= 1 else DEFAULT_LEAD_DAYS
+
+
+def preparation_at(post_at: datetime, lead_days: int | None) -> datetime:
+    """PREPARATION_DATE for a POST_DATE - the single source of truth."""
+    return post_at - timedelta(days=effective_lead(lead_days))
+
 
 def _local_to_utc(d: date, t: time, tz_name: str) -> datetime:
     tz = ZoneInfo(tz_name or "UTC")
@@ -42,7 +67,7 @@ def compute_cycle_dates(user: User, post_day: int, post_time: time, lead_days: i
         # skip the current month only if its posting moment has already passed
         current = (month == today.month and year == today.year)
         if not (current and post_at <= now):
-            generate_at = post_at - timedelta(days=max(0, lead_days))
+            generate_at = preparation_at(post_at, lead_days)
             out.append((date(year, month, 1), post_at, generate_at))
         month += 1
         if month > 12:
@@ -54,12 +79,22 @@ def compute_cycle_dates(user: User, post_day: int, post_time: time, lead_days: i
 def ensure_cycles(db: Session, user: User, plan: MonthlyPlan) -> list[PostCycle]:
     """Idempotent: unique (plan_id, target_month) means repeated runs create nothing twice."""
     created: list[PostCycle] = []
-    existing = {c.target_month for c in db.scalars(
-        select(PostCycle).where(PostCycle.plan_id == plan.id)).all()}
+    existing_cycles = list(db.scalars(
+        select(PostCycle).where(PostCycle.plan_id == plan.id)).all())
+    existing = {c.target_month for c in existing_cycles}
     prefs = db.get(UserPreferences, user.id)
-    lead = plan.lead_days if plan.lead_days is not None else (prefs.lead_days if prefs else 7)
+    lead = effective_lead(plan.lead_days if plan.lead_days is not None
+                          else (prefs.lead_days if prefs else None))
     for target, post_at, generate_at in compute_cycle_dates(user, plan.post_day, plan.post_time, lead):
         if target in existing:
+            # repair: a PLANNED cycle whose generate_at drifted (legacy lead=0,
+            # manual edit) is re-synced to POST_DATE - lead on every scan.
+            cycle = next((c for c in existing_cycles if c.target_month == target), None)
+            if cycle is not None and cycle.status == CycleStatus.PLANNED:
+                expected = preparation_at(cycle.post_at, lead)
+                if cycle.generate_at != expected:
+                    cycle.generate_at = expected
+                    logger.info("cycle_repaired cycle=%s generate_at=%s", cycle.id, expected.isoformat())
             continue
         db.add(PostCycle(plan_id=plan.id, user_id=user.id, target_month=target,
                          post_at=post_at, generate_at=generate_at, status=CycleStatus.PLANNED))
@@ -120,8 +155,9 @@ def delete_plan(db: Session, user_id: str, plan_id: str) -> None:
 
 def _reschedule_future(db: Session, user: User, plan: MonthlyPlan) -> None:
     now = datetime.now(timezone.utc)
+    lead = effective_lead(plan.lead_days)
     for target, post_at, generate_at in compute_cycle_dates(
-            user, plan.post_day, plan.post_time, plan.lead_days):
+            user, plan.post_day, plan.post_time, lead):
         cycle = db.scalar(select(PostCycle).where(PostCycle.plan_id == plan.id,
                                                   PostCycle.target_month == target))
         if cycle and cycle.status == CycleStatus.PLANNED:
@@ -159,7 +195,7 @@ def patch_cycle(db: Session, user: User, cycle_id: str, data: CyclePatch) -> Pos
         if new_post.tzinfo is None:
             new_post = new_post.replace(tzinfo=timezone.utc)
         cycle.post_at = new_post
-        cycle.generate_at = new_post - timedelta(days=max(0, cycle_overrides_lead(db, cycle)))
+        cycle.generate_at = preparation_at(new_post, cycle_overrides_lead(db, cycle))
     if "status" in updates and updates["status"]:
         allowed = {CycleStatus.SKIPPED.value, CycleStatus.PLANNED.value}
         if updates["status"] not in allowed:
@@ -174,7 +210,7 @@ def patch_cycle(db: Session, user: User, cycle_id: str, data: CyclePatch) -> Pos
 
 def cycle_overrides_lead(db: Session, cycle: PostCycle) -> int:
     plan = db.get(MonthlyPlan, cycle.plan_id)
-    return plan.lead_days if plan else 7
+    return effective_lead(plan.lead_days if plan else None)
 
 
 def approve_cycle(db: Session, user: User, cycle_id: str, message_id: str) -> tuple[PostCycle, ScheduledPost]:

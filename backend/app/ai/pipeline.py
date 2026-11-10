@@ -7,6 +7,7 @@ LLM generation service, and receives a fully scored, ranked, explained batch.
 """
 from __future__ import annotations
 
+import json
 import logging
 import time
 from dataclasses import dataclass, field
@@ -63,14 +64,20 @@ class Brief:
     emoji_level: int = 1
     additional_instructions: str = ""
     lambda_mmr: float = 0.7
+    # --- occasion decision (set by the services layer, see app/ai/occasion.py) ---
+    occasion_status: str = ""            # upcoming | today | past | unknown ("" = no occasion)
+    occasion_decision: dict = field(default_factory=dict)   # traced + persisted
+    warnings: list[str] = field(default_factory=list)
 
     def to_prompt_brief(self) -> dict:
         from app.ai.limits import preset_range
         lo, hi = preset_range(self.length_preset)
         return {
             "month": self.month, "month_name": self.month_name, "topic": self.topic,
-            "occasion": self.occasion, "occasion_name": self.occasion or "the season",
-            "occasion_fact": self.occasion_fact, "season": self.season,
+            "occasion": self.occasion,
+            "occasion_name": self.occasion or "none",
+            "occasion_fact": self.occasion_fact, "occasion_status": self.occasion_status,
+            "season": self.season,
             "audience": self.audience, "audience_name": self.audience,
             "audience_description": self.audience_description,
             "purpose": self.purpose, "platform": self.platform, "language": self.language,
@@ -141,7 +148,9 @@ def _intent_text(brief: Brief, keywords: list[str]) -> str:
         parts.append("keywords: " + ", ".join(keywords))
     if brief.cta:
         parts.append(f"CTA: {brief.cta}")
-    return ", ".join(parts) + "."
+    text = ", ".join(parts)
+    # never stack terminal punctuation: the CTA may already end in a period
+    return text if text.endswith((".", "!", "?")) else text + "."
 
 
 def _validate(brief: Brief) -> list[str]:
@@ -175,9 +184,23 @@ class Pipeline:
 
     # ------------------------------------------------------------------ run
     def run(self, brief: Brief, history: list[HistoryItem], pref: PersonalizationState, *,
-            stage_cb=None, trigger: str = "manual") -> PipelineResult:
+            stage_cb=None, trigger: str = "manual", run_id: str | None = None) -> PipelineResult:
         started = time.perf_counter()
         warnings: list[str] = []
+        # Observability (review P13): one structured trace per run so a developer
+        # can answer "why did candidate #1 win?" without guessing.  No secrets.
+        trace: dict = {
+            "run_id": run_id, "trigger": trigger,
+            "input": {
+                "month": brief.month, "topic": brief.topic, "purpose": brief.purpose,
+                "audience": brief.audience, "tones": list(brief.tones),
+                "platform": brief.platform, "length_preset": brief.length_preset,
+                "cta": brief.cta, "keywords": list(brief.keywords),
+                "occasion": brief.occasion, "occasion_status": brief.occasion_status,
+                "occasion_decision": brief.occasion_decision,
+            },
+            "stages": {},
+        }
 
         def stage(name: str) -> None:
             if stage_cb:
@@ -192,6 +215,7 @@ class Pipeline:
         from app.ai.text import extract_keywords as _extract
         auto_keywords = _extract(f"{brief.topic} {brief.occasion} {brief.occasion_fact}", k=6)
         keywords = list(dict.fromkeys([*(brief.keywords or []), *auto_keywords]))[:8]
+        trace["stages"]["context"] = {"keywords": keywords, "warnings": list(warnings)}
 
         # [3] NLP preprocessing + keyword extraction
         stage("preprocessing")
@@ -200,6 +224,7 @@ class Pipeline:
         # [4] intent vector
         intent_text = _intent_text(brief, coverage_keywords)
         q = self.embedder.embed([intent_text])[0]
+        trace["stages"]["intent"] = {"text": intent_text, "coverage_keywords": coverage_keywords}
 
         # [5] retrieval (RAG)
         stage("retrieval")
@@ -213,6 +238,11 @@ class Pipeline:
         stage("arms")
         rng = np.random.default_rng(self.seed)
         arms = thompson_select(list(brief.tones), pref.arm_stats, rng=rng, n_arms=3)
+        trace["stages"]["arms"] = {
+            "selected": [list(a) for a in arms],
+            "posteriors": {f"{t}|{s}": [round(v, 3) for v in pref.arm_stats.get((t, s), (1.0, 1.0))]
+                           for t, s in arms},
+        }
 
         # [7] prompt construction
         stage("prompt")
@@ -222,7 +252,9 @@ class Pipeline:
             voice_notes=brief.voice_notes, banned_words=brief.banned_words,
             additional_instructions=brief.additional_instructions,
         )
-        spec = PromptSpec(system=system, user=user, brief=prompt_brief)
+        spec = PromptSpec(system=system, user=user, brief=prompt_brief, arms=arms)
+        trace["stages"]["prompt"] = {"system_chars": len(system), "user_chars": len(user),
+                                      "n_exemplars": len(exemplars), "n_recent": len(recent)}
 
         # [8] one LLM call for six candidates (fallback: templates)
         stage("generating")
@@ -234,6 +266,12 @@ class Pipeline:
         if not raw:
             raw = TemplateAdapter().complete(spec).candidates[:6]
             is_fallback = True
+        trace["stages"]["generation"] = {
+            "provider": result.provider, "model": result.model,
+            "is_fallback": is_fallback, "llm_latency_ms": llm_ms,
+            "raw": [{"arm": it.get("arm"), "template_id": it.get("template_id"),
+                     "text": (it.get("text") or "")[:400]} for it in raw],
+        }
 
         # map arm index -> (tone, structure)
         def arm_of(idx: int) -> tuple[str, str]:
@@ -259,6 +297,10 @@ class Pipeline:
             text = (item.get("text") or "").strip()
             if text:
                 constrain(text, int(item.get("arm", 1)))
+        trace["stages"]["filtering"] = {
+            "n_raw": len(raw), "n_survived": len(survivors),
+            "filtered": [{"text": c.text[:160], "reason": c.filter_reason} for c in filtered],
+        }
 
         # top-up if fewer than three survived: one retry, then the template engine
         if len(survivors) < 3:
@@ -328,6 +370,13 @@ class Pipeline:
         s = dot_scores(F, pref.weights) if len(survivors) else np.zeros(0)
         for i, c in enumerate(survivors):
             c.score = float(s[i])
+        trace["stages"]["scoring"] = {
+            "weights": weights_to_dict(pref.weights),
+            "rows": [{"text": c.text[:120], "features": {k: round(v, 3) for k, v in c.features.items()},
+                      "score": round(float(c.score), 4)} for i, c in enumerate(survivors)],
+            "embedder": getattr(self.embedder, "name", "unknown"),
+            "history_size": len(history),
+        }
 
         # near-duplicate removal inside the batch (cos >= 0.90, keep the higher score)
         if len(survivors) > 1:
@@ -350,6 +399,7 @@ class Pipeline:
             F = np.delete(F, list(drop), axis=0) if drop else F
             s = np.delete(s, list(drop)) if drop else s
             E = np.delete(E, list(drop), axis=0) if drop else E
+            trace["stages"]["dedupe"] = {"near_duplicates_dropped": len(drop)}
         else:
             S_cc = similarity_matrix(E, E)
 
@@ -363,6 +413,14 @@ class Pipeline:
             c = survivors[idx]
             c.rank = rank
             displayed.append(c)
+        trace["stages"]["mmr"] = {
+            "lambda": float(brief.lambda_mmr or 0.7),
+            "selection_order": [int(i) for i in order],
+            "scores_in": [round(float(x), 4) for x in s],
+            "groups": [int(g) for g in groups],
+            "note": "rank k = k-th MMR pick; without MMR the set would be the top-3 by score",
+            "top3_by_score": [int(i) for i in np.argsort(-s)[:3]] if len(s) else [],
+        }
 
         # [14] Monte-Carlo confidence + explanation payload + PCA coordinates
         stage("confidence")
@@ -373,12 +431,22 @@ class Pipeline:
             c.explain["reasons"] = self._reasons(c, pref)
         for c in filtered:
             c.explain.setdefault("reasons", [])
+        trace["stages"]["ranking"] = {
+            "final": [{"rank": c.rank, "text": c.text[:200], "score": round(float(c.score), 4),
+                       "p_rank1": round(float(c.p_rank1), 4) if c.p_rank1 is not None else None,
+                       "confidence": c.confidence, "tone": c.tone,
+                       "structure": c.structure, "nearest_cosine": c.nearest_cosine}
+                      for c in displayed],
+        }
 
         # embedding map: displayed + intent + history points
         map_points = self._embedding_map(displayed, q, history)
 
         total_ms = int((time.perf_counter() - started) * 1000)
         stage("done")
+        trace["latency_ms"] = total_ms
+        trace["warnings"] = warnings
+        logger.info("pipeline_trace %s", json.dumps(trace, default=str))
         request_meta = {
             "intent_text": intent_text,
             "intent_embedding": q,
@@ -392,6 +460,7 @@ class Pipeline:
             "weights_snapshot": weights_to_dict(pref.weights),
             "is_fallback": is_fallback,
             "trigger": trigger,
+            "trace": trace,
         }
         return PipelineResult(
             displayed=displayed, filtered=filtered, request=request_meta,

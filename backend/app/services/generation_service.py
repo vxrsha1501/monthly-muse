@@ -9,6 +9,7 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import numpy as np
 from sqlalchemy import select
@@ -55,20 +56,6 @@ def build_brief(db: Session, user: User, payload: GenerateIn, cycle: PostCycle |
             audience_name = aud.name
             audience_description = aud.description or ""
 
-    # None = not specified -> pull the month's top suggestion (blueprint: "pulls the
-    # relevant occasion"); "" = the user explicitly chose None.
-    occasion = payload.occasion if payload.occasion is not None else ""
-    occasion_fact = ""
-    if payload.occasion is None:
-        suggestions = occasion_suggestions(db, month_int, user.region, user.id)
-        if suggestions:
-            occasion = suggestions[0].name
-            occasion_fact = suggestions[0].description or ""
-    elif occasion:
-        from app.db.models import Occasion
-        row = db.scalar(select(Occasion).where(Occasion.name == occasion))
-        occasion_fact = row.description if row else ""
-
     # scheduled cycles merge plan defaults with per-cycle overrides (Section 4 step 2)
     plan = None
     if cycle is not None:
@@ -83,12 +70,76 @@ def build_brief(db: Session, user: User, payload: GenerateIn, cycle: PostCycle |
 
     keywords = list(dict.fromkeys([*(payload.keywords or []), *topic_keywords]))[:6]
 
+    # ---- occasion decision (audit Task 1 / review P1-P2) ---------------------
+    # The occasion is NOT forced into the brief merely because it exists on the
+    # calendar: it must be relevant to the post objective, and (unless the user
+    # explicitly picked it) still upcoming relative to today and the posting date.
+    from app.ai.occasion import decide_occasion, sort_suggestions
+    from app.db.models import Occasion
+
+    try:
+        today = datetime.now(ZoneInfo(user.timezone or "UTC")).date()
+    except Exception:  # pragma: no cover - unknown tz name
+        today = datetime.now(timezone.utc).date()
+    target_year = int(payload.month.split("-")[0])
+    post_date = cycle.post_at.date() if cycle is not None else None
+    objective = " ".join(filter(None, [topic_name, " ".join(keywords),
+                                       payload.additional_instructions or ""]))
+
+    warnings: list[str] = []
+    decision = None
+    if payload.occasion:                       # explicitly chosen by the user
+        row = db.scalar(select(Occasion).where(Occasion.name == payload.occasion))
+        decision = decide_occasion(
+            name=payload.occasion, month=month_int, year=target_year,
+            objective=objective, category=(row.category.value if row else "custom"),
+            day=(row.day if row else None), reference=today, post_date=post_date,
+            explicit=True, occ_month=(row.month if row else None))
+        occasion = decision.name if decision.used else ""
+        occasion_fact = (row.description or "") if (row and decision.used) else ""
+        warnings += decision.warnings
+    elif payload.occasion is None:             # auto: month's top relevant, date-eligible
+        suggestions = sort_suggestions(
+            occasion_suggestions(db, month_int, user.region, user.id),
+            month_int, target_year, today)
+        best = None
+        fallback_decision = None
+        for s in suggestions:
+            d = decide_occasion(
+                name=s.name, month=month_int, year=target_year, objective=objective,
+                category=s.category.value, day=s.day, reference=today,
+                post_date=post_date, explicit=False, occ_month=s.month)
+            if d.used:
+                if best is None or d.relevance > best[0]:
+                    best = (d.relevance, d, s)
+            elif fallback_decision is None:
+                fallback_decision = d
+        if best is not None:
+            decision, occ_row = best[1], best[2]
+            occasion, occasion_fact = occ_row.name, (occ_row.description or "")
+        else:
+            decision = fallback_decision or decide_occasion(
+                name="", month=month_int, year=target_year, objective=objective,
+                category=None, reference=today, post_date=post_date, explicit=False)
+            occasion, occasion_fact = "", ""
+        warnings += decision.warnings
+    else:                                      # explicitly none
+        occasion, occasion_fact = "", ""
+        decision = decide_occasion(
+            name="", month=month_int, year=target_year, objective=objective,
+            category=None, reference=today, post_date=post_date, explicit=True)
+
+    decision_dict = decision.as_dict()
+
     return Brief(
         month=payload.month,
         month_name=month_name(month_int),
         topic=topic_name,
         occasion=occasion,
         occasion_fact=occasion_fact,
+        occasion_status=(decision.date_status if occasion else ""),
+        occasion_decision=decision_dict,
+        warnings=warnings,
         season=season_for(month_int, user.region),
         audience=audience_name,
         audience_description=audience_description,
@@ -156,7 +207,9 @@ def start_generation(db: Session, user: User, payload: GenerateIn, *,
         trigger=trigger if trigger in {t.value for t in TriggerKind} else TriggerKind.MANUAL,
         input={**payload.model_dump(), "_brief_tones": brief.tones,
                "_brief_occasion": brief.occasion, "_brief_topic": brief.topic,
-               "_brief_audience": brief.audience, "_brief_season": brief.season},
+               "_brief_audience": brief.audience, "_brief_season": brief.season,
+               "_occasion_decision": brief.occasion_decision,
+               "_warnings": list(brief.warnings)},
         status=RequestStatus.QUEUED,
         stage="queued",
     )
@@ -167,8 +220,12 @@ def start_generation(db: Session, user: User, payload: GenerateIn, *,
     return req
 
 
-def run_request(request_id: str) -> None:
-    """Background task: runs the pipeline and persists everything (own DB session)."""
+def run_request(request_id: str, pipeline_override=None) -> None:
+    """Background task: runs the pipeline and persists everything (own DB session).
+
+    ``pipeline_override`` lets the demo seeder use a template-only pipeline so
+    start-up seeding is fast, offline and never spends API quota.
+    """
     db = SessionLocal()
     started = time.perf_counter()
     try:
@@ -203,8 +260,23 @@ def run_request(request_id: str) -> None:
             db.commit()
 
         runtime = Runtime.init()
-        result = runtime.pipeline.run(brief, history, state, stage_cb=stage_cb,
-                                      trigger=req.trigger)
+        pipeline = pipeline_override or runtime.pipeline
+        # Seeding supplies a template pipeline and does not need the UI stage
+        # tracker; skipping its per-stage commits avoids dozens of network
+        # round trips on a managed database.
+        result = pipeline.run(brief, history, state,
+                              stage_cb=None if pipeline_override is not None else stage_cb,
+                              trigger=req.trigger, run_id=req.id)
+
+        # persist the (possibly re-evaluated) occasion decision + warnings
+        merged: list[str] = []
+        for w in [*list(req.input.get("_warnings") or []), *list(brief.warnings),
+                  *list(result.warnings)]:
+            if w not in merged:
+                merged.append(w)
+        req.input = {**req.input, "_warnings": merged,
+                     "_occasion_decision": brief.occasion_decision}
+        db.flush()
 
         _persist(db, req, user, cycle, result)
         req.status = RequestStatus.DONE
@@ -242,6 +314,10 @@ def _persist(db: Session, req: GenerationRequest, user: User, cycle: PostCycle |
     req.cost_usd = result.request.get("cost_usd")
     req.llm_latency_ms = result.request.get("llm_latency_ms")
     req.weights_snapshot = result.request.get("weights_snapshot") or {}
+    trace = result.request.get("trace")
+    if trace:
+        # persisted for observability (P13): full stage-by-stage evidence
+        req.input = {**req.input, "_trace": trace}
 
     def make(cand, rank: int | None, status: MessageStatus) -> GeneratedMessage:
         from app.ai.features import FEATURE_NAMES
@@ -334,6 +410,11 @@ def get_request_stage(db: Session, user_id: str, request_id: str) -> StageOut:
 
 def row_warnings(req: GenerationRequest) -> list[str]:
     return req.input.get("_warnings") or []
+
+
+def occasion_decision(req: GenerationRequest) -> dict:
+    """Persisted occasion decision for observability (review P13)."""
+    return req.input.get("_occasion_decision") or {}
 
 
 def to_candidate_out(row: GeneratedMessage, db: Session, user_id: str) -> CandidateOut:

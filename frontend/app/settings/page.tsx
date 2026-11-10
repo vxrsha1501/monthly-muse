@@ -17,7 +17,7 @@ const prefsSchema = z.object({
   banned_words: z.string(),
   emoji_level: z.coerce.number().min(0).max(2),
   length_preset: z.string(),
-  lead_days: z.coerce.number().min(0).max(28),
+  lead_days: z.coerce.number().min(1).max(28),
   notify_email: z.boolean(),
   learning_paused: z.boolean(),
   variety: z.coerce.number().min(0.5).max(0.9),
@@ -205,7 +205,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <label className="label" htmlFor="lead">Lead days</label>
-            <input id="lead" type="number" min={0} max={28} className="input" {...register("lead_days")} />
+            <input id="lead" type="number" min={1} max={28} className="input" {...register("lead_days")} />
             <p className="helper">Generate this many days before posting.</p>
           </div>
         </div>

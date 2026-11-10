@@ -2,13 +2,15 @@
 
     python scripts/seed.py
 
-Creates two demo users, each with preferences, an audience, a topic,
+Creates four demo users, each with preferences, an audience, a topic,
 a Monthly Plan with 12 cycles, two published past months (real generated +
 selected messages = history matrix H) and the next month's cycle already
-AWAITING_REVIEW with 3 ranked candidates:
+AWAITING_REVIEW with 3 ranked candidates plus feedback events:
 
-  * demo@monthlymuse.app / monthlymuse-demo - Brew & Bean cafe (Instagram)
-  * pro@monthlymuse.app   / monthlymuse-pro  - Northline Consulting (LinkedIn)
+  * demo@monthlymuse.app / monthlymuse-demo    - Brew & Bean cafe (Instagram)
+  * pro@monthlymuse.app   / monthlymuse-pro     - Northline Consulting (LinkedIn)
+  * studio@monthlymuse.app / monthlymuse-studio - Lumen Yoga Studio (Instagram)
+  * org@monthlymuse.app   / monthlymuse-org     - GreenStep Community Trust (Facebook)
 """
 from __future__ import annotations
 
@@ -20,8 +22,10 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(
 
 from sqlalchemy import select  # noqa: E402
 
-from app.db.models import (AudienceProfile, GeneratedMessage, MessageStatus, MonthlyPlan,  # noqa: E402
-                           PostCycle, ScheduledPost, ScheduledStatus, User, UserPreferences)
+from app.db.models import (AudienceProfile, FeedbackEvent, FeedbackType,  # noqa: E402
+                           GeneratedMessage, GenerationRequest, MessageStatus, MonthlyPlan,
+                           PostCycle, RequestStatus, ScheduledPost, ScheduledStatus, User,
+                           UserPreferences)
 from app.db.session import SessionLocal, init_db  # noqa: E402
 from app.schemas.auth import RegisterIn  # noqa: E402
 from app.schemas.content import PreferencesIn  # noqa: E402
@@ -49,6 +53,8 @@ DEMOS = [
         plan_name="Brew & Bean monthly offer",
         cta="Visit us this weekend",
         keywords=["free refill", "evening"],
+        purpose="promote", post_day=1,
+        feedback=[("like", 1), ("copy", 2)],
     ),
     dict(
         label="Consulting",
@@ -67,6 +73,50 @@ DEMOS = [
         plan_name="Northline December workshop",
         cta="Reserve your seat",
         keywords=["workshop", "planning"],
+        purpose="promote", post_day=1,
+        feedback=[("like", 3), ("copy", 1)],
+    ),
+    dict(
+        label="Yoga studio",
+        email="studio@monthlymuse.app",
+        password="monthlymuse-studio",
+        full_name="Riya - Lumen Yoga Studio",
+        voice_notes="Encouraging neighbourhood studio. Calm, warm, celebrates small progress. "
+                    "Never pushy or salesy.",
+        banned_words=["guaranteed", "weight loss", "perfect body"],
+        emoji_level=2,
+        variety=0.8,
+        tones=["warm", "inspirational"],
+        platform="instagram",
+        audience=("Local members", "25-45, neighbourhood regulars who book classes on mobile."),
+        topic=("New beginner yoga batches", "Announce the new batch timetable for the month",
+               ["beginner", "batch", "timetable"]),
+        plan_name="Lumen monthly timetable",
+        cta="Book your first class",
+        keywords=["beginner", "batch"],
+        purpose="announce", post_day=5,
+        feedback=[("copy", 2), ("like", 1)],
+    ),
+    dict(
+        label="Community",
+        email="org@monthlymuse.app",
+        password="monthlymuse-org",
+        full_name="Daniel - GreenStep Community Trust",
+        voice_notes="Local non-profit. Grateful, factual, volunteer-first. Numbers and names, "
+                    "no marketing fluff.",
+        banned_words=["act now", "limited offer", "donate today"],
+        emoji_level=0,
+        variety=0.5,
+        tones=["professional", "formal"],
+        platform="facebook",
+        audience=("Volunteers and donors", "Local volunteers and monthly donors aged 30-65."),
+        topic=("Monthly volunteer drive", "Recruit volunteers for the monthly clean-up drive",
+               ["volunteer", "clean-up"]),
+        plan_name="GreenStep monthly drive",
+        cta="Sign up to volunteer",
+        keywords=["volunteer", "clean-up"],
+        purpose="engage", post_day=10,
+        feedback=[("like", 1), ("copy", 3)],
     ),
 ]
 
@@ -91,6 +141,7 @@ def seed_demo(db, cfg: dict) -> None:
                              .where(MonthlyPlan.user_id == user.id).limit(1)) is not None
         if has_plan:
             print(f"Already seeded: {cfg['email']} - skipping")
+            _ensure_review_feedback(db, user, cfg)
             return
         print(f"[{cfg['label']}] {cfg['email']} exists - backfilling persona and demo data")
     else:
@@ -111,9 +162,9 @@ def seed_demo(db, cfg: dict) -> None:
 
     plan = plan_service.create_plan(db, user, PlanIn(
         name=cfg["plan_name"], topic_id=topic.id, audience_id=audience.id,
-        tones=cfg["tones"], purpose="promote", platform=cfg["platform"],
+        tones=cfg["tones"], purpose=cfg.get("purpose", "promote"), platform=cfg["platform"],
         length_preset="medium", cta_text=cfg["cta"],
-        keywords=cfg["keywords"], post_day=1, lead_days=7,
+        keywords=cfg["keywords"], post_day=cfg.get("post_day", 1), lead_days=7,
     ))
     print(f"[{cfg['label']}] plan created: {plan.name}")
 
@@ -162,7 +213,43 @@ def seed_demo(db, cfg: dict) -> None:
         print(f"  [{cfg['label']}] {target.target_month.strftime('%B %Y')} cycle: AWAITING_REVIEW "
               f"(request {req.id})")
 
+        # extra feedback on the review batch (likes / copies) so analytics,
+        # arm posteriors and the weight learner have distinct per-user signals
+        shown = list(db.scalars(select(GeneratedMessage).where(
+            GeneratedMessage.request_id == req.id,
+            GeneratedMessage.rank.is_not(None)).order_by(GeneratedMessage.rank)).all())
+        for event_type, rank in cfg.get("feedback", []):
+            pick = next((m for m in shown if m.rank == rank), None)
+            if pick is not None:
+                feedback_service.handle_feedback(db, user, pick.id, event_type)
+                print(f"  [{cfg['label']}] feedback: {event_type} on rank {rank}")
+
     print(f"[{cfg['label']}] ready: {cfg['email']} / {cfg['password']}")
+
+
+def _ensure_review_feedback(db, user, cfg: dict) -> None:
+    """Backfill the persona's like/copy events on its review batch (idempotent).
+    Every event points at a real GeneratedMessage owned by this user."""
+    from app.db.models import FeedbackEvent, FeedbackType, RequestStatus
+    req = db.scalar(select(GenerationRequest).where(
+        GenerationRequest.user_id == user.id,
+        GenerationRequest.status == RequestStatus.DONE)
+        .order_by(GenerationRequest.created_at.desc()).limit(1))
+    if req is None:
+        return
+    shown = list(db.scalars(select(GeneratedMessage).where(
+        GeneratedMessage.request_id == req.id,
+        GeneratedMessage.rank.is_not(None)).order_by(GeneratedMessage.rank)).all())
+    for event_type, rank in cfg.get("feedback", []):
+        pick = next((m for m in shown if m.rank == rank), None)
+        if pick is None:
+            continue
+        exists = db.scalar(select(FeedbackEvent.id).where(
+            FeedbackEvent.message_id == pick.id,
+            FeedbackEvent.event_type == FeedbackType(event_type)).limit(1))
+        if exists is None:
+            feedback_service.handle_feedback(db, user, pick.id, event_type)
+            print(f"  [{cfg['label']}] backfilled feedback: {event_type} on rank {rank}")
 
 
 def main() -> None:
