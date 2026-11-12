@@ -15,13 +15,15 @@ export default function ReviewIndexPage() {
     queryFn: () => http.get<Cycle[]>("/cycles?status=AWAITING_REVIEW"),
   });
 
-  useEffect(() => {
-    if (!data) return;
-    const pending = data.find((c) => c.latest_request_id);
-    if (pending) router.replace(`/review/${pending.latest_request_id}`);
-  }, [data, router]);
+  const pending = data?.find((c) => c.latest_request_id) ?? null;
 
-  if (isLoading) return <CardSkeleton />;
+  useEffect(() => {
+    if (pending?.latest_request_id) router.replace(`/review/${pending.latest_request_id}`);
+  }, [pending, router]);
+
+  // Still fetching, or redirecting to the batch that is waiting: keep the
+  // skeleton up so the empty state never flashes before the navigation.
+  if (isLoading || !data || pending) return <CardSkeleton />;
 
   return (
     <EmptyState

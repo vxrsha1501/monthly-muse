@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hmac
 import logging
+import os
 import threading
 from datetime import datetime, timedelta, timezone
 
@@ -177,6 +178,21 @@ def seed_demos(db: Session = Depends(get_db),
     return seed_demo_accounts(db)
 
 
+def _deployed_commit() -> str | None:
+    """The commit this build was deployed from.
+
+    Render exports RENDER_GIT_COMMIT into every service; the other names cover
+    local runs and hosts with their own convention. Best effort by design - a
+    checkout with no metadata reports null rather than guessing from the
+    filesystem, so a hash here always means "this is what is actually running".
+    """
+    for key in ("RENDER_GIT_COMMIT", "GIT_COMMIT", "SOURCE_VERSION"):
+        value = os.environ.get(key)
+        if value and value.strip():
+            return value.strip()
+    return None
+
+
 @router.get("/admin/health")
 def health(db: Session = Depends(get_db)) -> dict:
     from app.core.runtime import Runtime
@@ -195,4 +211,5 @@ def health(db: Session = Depends(get_db)) -> dict:
         "llm_provider": settings.resolve_provider(),
         "llm_model": settings.model_for(settings.resolve_provider()),
         "environment": settings.environment,
+        "commit": _deployed_commit(),
     }
