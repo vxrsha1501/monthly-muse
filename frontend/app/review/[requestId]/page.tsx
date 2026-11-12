@@ -553,28 +553,6 @@ export default function ReviewPage() {
         </details>
       )}
 
-      {/* what the AI used */}
-      <div className="card p-5">
-        <h3 className="text-h3 mb-2">What the AI used</h3>
-        <div className="grid sm:grid-cols-3 gap-4 text-body text-ink-2">
-          <div>
-            <p className="text-small font-semibold text-ink mb-1">Style arms (Thompson sampling)</p>
-            {stage.arms.length ? stage.arms.map((a, i) => (
-              <p key={i} className="capitalize">{i + 1}. {a[0]?.replace("_", " ")} · {a[1]?.replace("-", " ")}{i === 2 ? " (explore)" : ""}</p>
-            )) : <p>—</p>}
-          </div>
-          <div>
-            <p className="text-small font-semibold text-ink mb-1">Retrieved</p>
-            <p>{stage.retrieval.n_history ?? 0} past posts in the history matrix</p>
-            <p>{stage.retrieval.exemplars?.length ?? 0} style exemplars · {stage.retrieval.recent?.length ?? 0} avoided repeats</p>
-          </div>
-          <div>
-            <p className="text-small font-semibold text-ink mb-1">Scoring</p>
-            <p>s = F·w with your learned weights, MMR λ=0.7, Monte-Carlo confidence (200 draws)</p>
-          </div>
-        </div>
-      </div>
-
       {/* reject dialog */}
       <Modal open={!!rejectTarget} onClose={() => setRejectTarget(null)} title="Why are you rejecting this?"
         footer={
