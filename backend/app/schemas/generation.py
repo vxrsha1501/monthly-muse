@@ -67,12 +67,39 @@ class CandidateOut(BaseModel):
     final_text: str | None = None
 
 
+class BriefOut(BaseModel):
+    """The brief that actually produced this batch (saved with the request).
+
+    Only fields that were persisted for that request are populated - missing
+    values stay ``None`` and the UI simply omits them.
+    """
+
+    month: str | None = None
+    topic: str | None = None
+    occasion: str | None = None
+    purpose: str | None = None
+    audience: str | None = None
+    tones: list[str] = Field(default_factory=list)
+    platform: str | None = None
+    length: str | None = None
+    keywords: list[str] = Field(default_factory=list)
+    cta: str | None = None
+    additional_instructions: str | None = None
+    scheduled_date: str | None = None        # cycle.post_at, never the generation date
+    plan_name: str | None = None
+
+
 class StageOut(BaseModel):
     id: str
     status: str
     stage: str | None = None
     ui_stage: str | None = None
     provider: str | None = None
+    model: str | None = None
+    source: str | None = None                # manual | scheduled | regenerate
+    created_at: datetime | None = None
+    fallback_reason: str | None = None
+    brief: BriefOut | None = None
     error: str | None = None
     latency_ms: int | None = None
     is_fallback: bool = False

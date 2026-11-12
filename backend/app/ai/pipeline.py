@@ -18,7 +18,9 @@ from app.ai.arms import TONES, PURPOSES, arm_catalog, style_label, thompson_sele
 from app.ai.confidence import confidence_band, rank1_confidence
 from app.ai.features import FEATURE_NAMES, build_feature_row, feature_dict
 from app.ai.limits import acceptable_range, platform_limit
-from app.ai.llm_adapters import GenerationService, PromptSpec, TemplateAdapter
+from app.ai.llm_adapters import (GenerationService, GenerationUnavailable, PromptSpec,
+                                TemplateAdapter)
+from app.core.config import settings
 from app.ai.mmr import mmr_select
 from app.ai.prompt import build_prompt
 from app.ai.scoring import DEFAULT_WEIGHTS, scores as dot_scores, weights_to_dict
@@ -263,12 +265,21 @@ class Pipeline:
         llm_ms = int((time.perf_counter() - llm_started) * 1000)
         raw = result.candidates[:6]
         is_fallback = result.provider == "template"
+        fallback_reason = result.fallback_reason
         if not raw:
+            # No silent substitution: either the caller opted into the offline
+            # template engine, or this generation is a visible failure.
+            if not settings.allow_template_fallback:
+                raise GenerationUnavailable(
+                    f"The LLM provider returned no usable candidates "
+                    f"({result.provider}/{result.model}); nothing was saved.")
             raw = TemplateAdapter().complete(spec).candidates[:6]
             is_fallback = True
+            fallback_reason = fallback_reason or "provider returned no candidates"
         trace["stages"]["generation"] = {
             "provider": result.provider, "model": result.model,
-            "is_fallback": is_fallback, "llm_latency_ms": llm_ms,
+            "is_fallback": is_fallback, "fallback_reason": fallback_reason,
+            "llm_latency_ms": llm_ms,
             "raw": [{"arm": it.get("arm"), "template_id": it.get("template_id"),
                      "text": (it.get("text") or "")[:400]} for it in raw],
         }
@@ -317,6 +328,13 @@ class Pipeline:
             except Exception as exc:  # pragma: no cover
                 logger.warning("topup_failed: %s", exc)
         if len(survivors) < 3:
+            if not settings.allow_template_fallback:
+                raise GenerationUnavailable(
+                    f"Only {len(survivors)} of the LLM candidates passed the quality checks "
+                    "(length, CTA, language, duplicates). Nothing was saved - retry or "
+                    "adjust the brief.")
+            is_fallback = True
+            fallback_reason = fallback_reason or "quality checks left too few candidates"
             for item in TemplateAdapter().complete(spec).candidates:
                 if len(survivors) >= 6:
                     break
@@ -459,6 +477,7 @@ class Pipeline:
             "llm_latency_ms": llm_ms,
             "weights_snapshot": weights_to_dict(pref.weights),
             "is_fallback": is_fallback,
+            "fallback_reason": fallback_reason if is_fallback else None,
             "trigger": trigger,
             "trace": trace,
         }

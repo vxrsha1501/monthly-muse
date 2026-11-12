@@ -55,6 +55,11 @@ class Settings(BaseSettings):
     llm_circuit_failures: int = 3
     llm_circuit_cooldown_seconds: float = 60.0
     llm_monthly_budget_usd: float = 5.0
+    # Off by default: when every hosted provider fails the request must fail
+    # loudly (and keep the previous candidates) instead of quietly returning
+    # template text labelled as a normal batch. Set MM_ALLOW_TEMPLATE_FALLBACK=true
+    # to opt back into the offline template engine as a last resort.
+    allow_template_fallback: bool = False
 
     # --- rate limiting ---
     generations_per_hour: int = 10

@@ -102,12 +102,33 @@ export interface Candidate {
   final_text: string | null;
 }
 
+export interface Brief {
+  month: string | null;
+  topic: string | null;
+  occasion: string | null;
+  purpose: string | null;
+  audience: string | null;
+  tones: string[];
+  platform: string | null;
+  length: string | null;
+  keywords: string[];
+  cta: string | null;
+  additional_instructions: string | null;
+  scheduled_date: string | null;
+  plan_name: string | null;
+}
+
 export interface Stage {
   id: string;
   status: "QUEUED" | "RUNNING" | "DONE" | "FAILED";
   stage: string | null;
   ui_stage: string | null;
   provider: string | null;
+  model: string | null;
+  source: string | null;
+  created_at: string | null;
+  fallback_reason: string | null;
+  brief: Brief | null;
   error: string | null;
   latency_ms: number | null;
   is_fallback: boolean;

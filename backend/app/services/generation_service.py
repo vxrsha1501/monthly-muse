@@ -24,7 +24,8 @@ from app.db.models import (CycleStatus, GeneratedMessage, GenerationRequest, Mes
                            MonthlyPlan, Notification, NotificationType, PostCycle, RequestStatus,
                            ToneStat, Topic, TriggerKind, User, UserPreferences)
 from app.db.session import SessionLocal, blob_to_vec, vec_to_blob
-from app.schemas.generation import CandidateOut, FeatureBreakdown, GenerateIn, NearestPast, StageOut
+from app.schemas.generation import (BriefOut, CandidateOut, FeatureBreakdown, GenerateIn, NearestPast,
+                                    StageOut)
 from app.services.catalog_service import month_name, occasion_suggestions, season_for
 from app.services.history_service import content_month
 
@@ -314,6 +315,10 @@ def _persist(db: Session, req: GenerationRequest, user: User, cycle: PostCycle |
     req.cost_usd = result.request.get("cost_usd")
     req.llm_latency_ms = result.request.get("llm_latency_ms")
     req.weights_snapshot = result.request.get("weights_snapshot") or {}
+    fallback_reason = result.request.get("fallback_reason")
+    if fallback_reason:
+        # provenance travels with the request (no schema change needed)
+        req.input = {**req.input, "_fallback_reason": fallback_reason}
     trace = result.request.get("trace")
     if trace:
         # persisted for observability (P13): full stage-by-stage evidence
@@ -369,6 +374,57 @@ def _persist(db: Session, req: GenerationRequest, user: User, cycle: PostCycle |
 
 # --------------------------------------------------------------- reads
 
+def request_brief(db: Session, req: GenerationRequest) -> BriefOut:
+    """The saved brief behind one batch - read, never reconstructed.
+
+    Source of truth is ``GenerationRequest.input`` (what was actually sent to
+    the pipeline when this batch was created). Only when a field was not saved
+    (older rows) does a monthly request fall back to its own plan, which is the
+    same plan the scheduler used to build that payload. Nothing is invented:
+    unknown values stay ``None`` and the review screen hides them.
+    """
+    from app.db.models import AudienceProfile
+
+    data = req.input or {}
+    cycle = db.get(PostCycle, req.cycle_id) if req.cycle_id else None
+    plan = db.get(MonthlyPlan, cycle.plan_id) if cycle is not None else None
+
+    audience: str | None = None
+    audience_id = data.get("audience_id") or (plan.audience_id if plan is not None else None)
+    if audience_id:
+        aud = db.get(AudienceProfile, audience_id)
+        if aud is not None and aud.user_id == req.user_id:
+            audience = aud.name
+
+    topic = data.get("_brief_topic") or data.get("topic")
+    if not topic and plan is not None:
+        plan_topic = db.get(Topic, plan.topic_id) if plan.topic_id else None
+        topic = plan_topic.name if plan_topic else plan.name
+
+    tones = list(data.get("tones") or (plan.tones if plan is not None else []) or [])
+    keywords = list(data.get("keywords") or (plan.keywords if plan is not None else []) or [])
+    occasion = data.get("_brief_occasion")
+    if occasion is None:
+        occasion = data.get("occasion")
+
+    return BriefOut(
+        month=data.get("month"),
+        topic=topic or None,
+        occasion=occasion or None,
+        purpose=data.get("purpose") or (plan.purpose if plan is not None else None),
+        audience=audience,
+        tones=tones,
+        platform=data.get("platform") or (plan.platform if plan is not None else None),
+        length=data.get("length") or (plan.length_preset if plan is not None else None),
+        keywords=keywords,
+        cta=data.get("cta") or (plan.cta_text if plan is not None else None),
+        additional_instructions=(data.get("additional_instructions")
+                                  or (plan.extra_instructions if plan is not None else None)),
+        scheduled_date=cycle.post_at.date().isoformat() if cycle is not None else None,
+        plan_name=(plan.name if plan is not None else None),
+    )
+
+
 def get_request_stage(db: Session, user_id: str, request_id: str) -> StageOut:
     req = db.get(GenerationRequest, request_id)
     if req is None or req.user_id != user_id:
@@ -397,6 +453,11 @@ def get_request_stage(db: Session, user_id: str, request_id: str) -> StageOut:
         id=req.id, status=req.status.value, stage=req.stage,
         ui_stage=UI_STAGES.get(req.stage or "", None),
         provider=req.provider,
+        model=req.model,
+        source=req.trigger.value if hasattr(req.trigger, "value") else req.trigger,
+        created_at=req.created_at,
+        fallback_reason=req.input.get("_fallback_reason") if req.input else None,
+        brief=request_brief(db, req),
         error=req.error,
         latency_ms=req.latency_ms,
         is_fallback=req.provider == "template",

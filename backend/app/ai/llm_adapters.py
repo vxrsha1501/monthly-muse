@@ -53,6 +53,19 @@ class LLMUnavailable(Exception):
         self.missing_model = missing_model
 
 
+class GenerationUnavailable(Exception):
+    """Every configured provider failed and the caller must NOT fake success.
+
+    Raised instead of silently returning template text: the request is marked
+    failed, the reason is stored, the previous candidates stay untouched and
+    the user can retry.
+    """
+
+    def __init__(self, message: str, *, attempts: list[str] | None = None) -> None:
+        super().__init__(message)
+        self.attempts = attempts or []
+
+
 @dataclass
 class PromptSpec:
     system: str
@@ -71,6 +84,7 @@ class ProviderResult:
     completion_tokens: int | None = None
     cost_usd: float | None = None
     latency_ms: int = 0
+    fallback_reason: str | None = None   # set only when the template engine was used
 
 
 # --- JSON parsing ---------------------------------------------------------
@@ -474,23 +488,36 @@ class GenerationService:
             # Template used as primary (only when no LLM configured)
             return adapter.complete(spec)
 
+        failures: list[str] = []
         for name in self._chain(adapter.name):
             breaker = breaker_for(name)
             if breaker.is_open:
+                failures.append(f"{name}: circuit open after repeated failures")
                 logger.warning("circuit_open provider=%s cooldown=%ss", name, breaker.cooldown)
                 continue
             try:
                 provider = get_adapter(name)
             except LLMUnavailable as exc:
+                failures.append(f"{name}: {exc}")
                 logger.info("provider_skipped provider=%s reason=%s", name, exc)
                 continue
-            result = self._with_retries(provider, spec)
+            result, error = self._with_retries(provider, spec)
             if result is not None and result.candidates:
                 logger.info("llm_success provider=%s", name)
                 return result
-            logger.warning("llm_exhausted provider=%s", name)
+            failures.append(f"{name}: {error or 'no usable candidates'}")
+            logger.warning("llm_exhausted provider=%s reason=%s", name, error)
 
-        return self._fallback(spec, reason="all_providers_unavailable")
+        reason = "; ".join(failures) or "no LLM provider configured"
+        if settings.allow_template_fallback:
+            logger.warning("template_fallback_explicit reason=%s", reason)
+            fallback = self._fallback(spec, reason=reason)
+            fallback.fallback_reason = reason
+            return fallback
+        # No silent template substitution: a failed generation must be visible.
+        raise GenerationUnavailable(
+            "Generation failed - the configured LLM provider was unavailable. " + reason,
+            attempts=failures)
 
     def _chain(self, primary: str) -> list[str]:
         chain = [settings.resolve_provider(primary or settings.llm_provider)]
@@ -499,32 +526,38 @@ class GenerationService:
                 chain.append(name)
         return chain
 
-    def _with_retries(self, adapter, spec: PromptSpec) -> ProviderResult | None:
+    def _with_retries(self, adapter, spec: PromptSpec) -> tuple[ProviderResult | None, str | None]:
+        """Return ``(result, None)`` on success or ``(None, reason)`` on failure."""
         breaker = breaker_for(adapter.name)
         attempts = settings.llm_max_attempts
+        last_error: str | None = None
         for i in range(attempts):
             try:
                 result = adapter.complete(spec)
                 breaker.record_success()
                 if result.candidates:
-                    return result
+                    return result, None
+                last_error = "provider returned no parseable candidates"
                 logger.warning("llm_malformed_json attempt=%d", i + 1)
             except LLMUnavailable as exc:
+                last_error = str(exc)
                 logger.warning("llm_error provider=%s attempt=%d err=%s", adapter.name, i + 1, exc)
                 breaker.record_failure()
                 if not exc.retryable:
-                    return None          # fail over to the next provider immediately
+                    return None, last_error   # fail over to the next provider immediately
             except httpx.TimeoutException as exc:
+                last_error = f"timeout: {exc}"
                 logger.warning("llm_error provider=%s attempt=%d err=%s", adapter.name, i + 1, exc)
                 breaker.record_failure()
-                return None              # a hanging provider: move on immediately
+                return None, last_error       # a hanging provider: move on immediately
             except (httpx.HTTPError, KeyError, ValueError) as exc:
+                last_error = f"{type(exc).__name__}: {exc}"
                 logger.warning("llm_error provider=%s attempt=%d err=%s", adapter.name, i + 1, exc)
                 breaker.record_failure()
             if i < attempts - 1:
                 delay = BACKOFF_SECONDS[min(i, len(BACKOFF_SECONDS) - 1)]
                 time.sleep(delay * (0.7 + 0.6 * random.random()))  # jitter
-        return None
+        return None, last_error
 
     def _fallback(self, spec: PromptSpec, reason: str) -> ProviderResult:
         logger.warning("template_fallback reason=%s", reason)
