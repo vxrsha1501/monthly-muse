@@ -52,11 +52,12 @@
 <div class="subtitle">Presentation script — two speakers</div>
 <div class="meta">AI-Powered Automated Message Generator for Monthly Posting · ~14 minutes + Q&amp;A ·
 <strong>Speaker A</strong> (blue shirt) opens and handles architecture / engineering ·
-<strong>Speaker B</strong> (green shirt) handles the AI maths and runs the live demo</div>
+<strong>Speaker B</strong> (green shirt) handles the AI maths and runs the live demo ·
+status as of November 2026</div>
 
 <p>
-<span class="tag">14 slides</span><span class="tag">14 minutes</span><span class="tag">live demo built in</span>
-<span class="tag">alternating speakers</span><span class="tag">Q&amp;A prep included</span>
+<span class="tag">14 slides + 2 appendices</span><span class="tag">14 minutes</span><span class="tag">live demo built in</span>
+<span class="tag">alternating speakers</span><span class="tag">hosted LLM, template fallback</span><span class="tag">Q&amp;A prep included</span>
 </p>
 
 <h2>How to use this script</h2>
@@ -65,13 +66,20 @@
   <li><span class="who a">SPEAKER A</span> and <span class="who b">SPEAKER B</span> mark who owns the slide.</li>
   <li><b>Handoff lines</b> (in yellow) are spoken by the named speaker to pass the floor — say them out loud so the audience knows who is talking next.</li>
   <li>Timings are cumulative from the start. Keep to them; if you run long, trim the roadmap slide, never the demo.</li>
-  <li>Run the demo on <code>http://localhost:3000</code> with the seeded account
-      <code>demo@monthlymuse.app</code> / <code>monthlymuse-demo</code>.</li>
+  <li>Run the demo on the deployed site (<code>https://monthly-muse-bay.vercel.app</code>) or, if the network is
+      unreliable, on <code>http://localhost:3000</code> with <code>demo@monthlymuse.app</code> / <code>monthlymuse-demo</code>.
+      The December 2026 candidate batch is already generated, so the demo starts one click from the review screen.</li>
+  <li>Two appendices (pipeline stage reference, algorithm reference) are backup material for questions — you will
+      only need them if the audience pushes past slide 7.</li>
 </ul>
 
 <div class="note">
-<b>Rehearsal tip:</b> practise the demo transitions once with the site open. The dashboard already shows
-"November post ready for review (3 candidates)", so the demo starts one click from the review screen.
+<b>What is different from last term's script:</b> candidates are now written by a <b>hosted language model</b>
+(Groq, <code>openai/gpt-oss-120b</code>) through a provider chain, not by the template engine. The template engine
+still exists and is still used — but only as an explicit, visible fallback, and only when
+<code>MM_ALLOW_TEMPLATE_FALLBACK=true</code>. Every batch records which provider wrote it, so the review screen can
+label it. If a model call genuinely fails the request is marked <i>failed</i> and the previous batch is kept; nothing
+is silently substituted. Say this plainly if someone asks — it is one of the project's better design decisions.
 </div>
 
 <h2 class="pb">Slide 1 — Title <span class="timing">0:00 – 0:30</span></h2>
@@ -81,11 +89,13 @@
   <span class="who a">SPEAKER A</span>
   <div class="say">"Good morning everyone. This is MonthlyMuse — a web application that prepares your
   monthly social post <i>before you even ask for it</i>. You define a monthly plan once, and every month
-  the system drafts six candidate messages, ranks them with our own NLP engine, and hands you the best
+  the system retrieves your own history, picks writing styles, asks a hosted language model for six
+  candidate messages, then ranks and diversifies them with our own maths engine and hands you the best
   three with a transparent explanation of why they ranked where they did."</div>
   <span class="who b">SPEAKER B</span>
-  <div class="say bline">"Everything you'll see today is built and running — sixty-two automated tests
-  pass, and we'll be demoing the live application, not slides of it."</div>
+  <div class="say bline">"Everything you'll see today is built, deployed and running — a hundred and sixty-six
+  automated tests pass, the API is serving live traffic, and we'll be demoing the real application, not
+  slides of it."</div>
   <div class="stage"><b>Handoff — A:</b> "To understand why this is worth building, let's start with the problem."</div>
 </div>
 
@@ -113,8 +123,8 @@
   <i>before</i> the user asks, show three genuinely different candidates with a visible score breakdown,
   and then measurably improve from every choice the user makes."</div>
   <div class="say bline">"Three promises. <b>Automatic</b> — a scheduler, not a reminder. <b>Transparent</b>
-  — you can see every feature that produced the score. And <b>adaptive</b> — your selection changes next
-  month's output."</div>
+  — you can see every feature that produced the score, and which model wrote the text. And <b>adaptive</b> —
+  your selection changes next month's output."</div>
   <div class="stage"><b>Handoff — B:</b> "Here's what that looks like. A takes you through the flow."</div>
 </div>
 
@@ -124,50 +134,55 @@
   <div class="cue"><span>Product flow</span><span>3:15</span></div>
   <span class="who a">SPEAKER A</span>
   <div class="say">"The loop is short. First, you create a <b>Monthly Plan</b> — topic, audience,
-  platform, tone, posting day. Then the scheduler detects the upcoming month, pulls the relevant
-  occasion — Diwali, a seasonal moment — and runs the pipeline automatically."</div>
+  platform, tone, posting day. Then the scheduler detects the upcoming month, checks whether a calendar
+  occasion actually relates to your objective, and runs the pipeline automatically."</div>
   <div class="say">"You get a notification: three ranked candidates are waiting. You open the review
-  screen, pick one, edit one, or reject one with a reason. You approve it, it lands in the calendar,
-  and it's marked published."</div>
-  <div class="say">"Every one of those actions is recorded as a feedback event. That's where the
-  learning starts."</div>
+  screen, pick one, edit one, or reject one with a reason. You approve it, it lands in the calendar, and
+  it's marked published."</div>
+  <div class="say">"If none of the three fits, <b>Regenerate all</b> runs the whole pipeline again from the
+  <i>saved brief</i> — the plan details are read back from the request, never re-inferred from the
+  candidate text. Every action — select, edit, like, dislike, reject-with-reason — is recorded as a
+  feedback event. That's where the learning starts."</div>
   <div class="stage"><b>Handoff — A:</b> "But behind that simple loop sits a fairly serious engine. B."</div>
 </div>
 
 <h2 class="pb">Slide 5 — Architecture <span class="timing">3:15 – 4:30</span></h2>
 <div class="slide">
-  <h3>System architecture — three pieces, one database</h3>
+  <h3>System architecture — three pieces, one database, deployed</h3>
   <div class="cue"><span>Engineering</span><span>4:30</span></div>
   <span class="who b">SPEAKER B</span>
-  <div class="say bline">"The system is three pieces. A <b>Next.js 14 frontend</b> that only ever talks
-  to the public API — no secrets in the browser. A <b>FastAPI backend</b> with fifty-eight endpoints
-  covering auth, plans, cycles, messages, analytics and the calendar."</div>
-  <div class="say bline">"And a <b>scheduler worker</b> running on APScheduler, sharing the same code and
-  the same database but started with a different command. The API is stateless, so it can be scaled by
-  just adding instances."</div>
-  <div class="say bline">"Underneath is a <b>sixteen-table schema</b>: users, preferences, audiences,
-  topics, occasions, plans, cycles, generation requests, messages, feedback events, tone statistics,
-  scheduled posts, metrics, notifications, job runs, and a daily analytics rollup."</div>
+  <div class="say bline">"The system is three pieces. A <b>Next.js 14 frontend</b> on Vercel that only ever
+  talks to the public API — no secrets in the browser. A <b>FastAPI backend</b> on Render with
+  <b>fifty-eight route handlers</b> across forty-five paths, covering auth, plans, cycles, messages,
+  analytics, calendar and admin health."</div>
+  <div class="say bline">"And a <b>scheduler worker</b> on Render, running on APScheduler, sharing the same
+  code and database but started with a different command. The API is stateless, so it scales by adding
+  instances."</div>
+  <div class="say bline">"Underneath is a <b>sixteen-table schema</b>: users, preferences, audiences, topics,
+  occasions, plans, cycles, generation requests, messages, feedback events, tone statistics, scheduled
+  posts, metrics, notifications, job runs and a daily analytics rollup. SQLite by default; one environment
+  variable makes it Postgres, which is what the deployed stack can switch to without code changes."</div>
   <div class="stage"><b>Handoff — B:</b> "The interesting part is what runs inside that backend. A."</div>
 </div>
 
 <h2>Slide 6 — The AI pipeline <span class="timing">4:30 – 6:00</span></h2>
 <div class="slide">
-  <h3>Fourteen pipeline stages, in one request</h3>
+  <h3>Fourteen stages, one language-model call</h3>
   <div class="cue"><span>Core system</span><span>6:00</span></div>
   <span class="who a">SPEAKER A</span>
-  <div class="say">"Generation is a fourteen-stage pipeline. It starts by <b>understanding context</b> —
-  plan, audience, occasion, platform — then <b>retrieves your history</b>: your past posts, their
-  embeddings, and what you selected or rejected."</div>
-  <div class="say">"Next it picks <b>style arms</b> using Thompson sampling, then makes <b>one call</b>
-  to the language model — which over-generates <b>six</b> candidates. One call, six candidates: that's
-  deliberate, it's the cost-efficient way to have something to choose from."</div>
-  <div class="say">"Then the filter chain. <b>Hard constraints</b> — length limits per platform and
-  language, banned words, emoji level. <b>Deduplication</b> so no two candidates repeat an opening line.
-  Then everything is <b>embedded</b> with our own 384-dimensional embedder."</div>
-  <div class="say">"We compute <b>six features</b> per candidate, score them, run <b>MMR</b> to make sure
-  the final three are stylistically different, estimate <b>confidence</b>, and produce an explanation
-  payload — which is what you actually see on screen."</div>
+  <div class="say">"Generation is fourteen numbered stages. It starts by <b>validating the brief</b> — month,
+  topic, audience, platform, tones, length, banned words — then <b>assembles context</b>, including the
+  occasion only if two gates pass. Then <b>preprocessing</b>: keyword extraction and text normalisation."</div>
+  <div class="say">"Stage four builds a 384-dimensional <b>intent vector</b> from the brief. Stage five is
+  <b>retrieval</b>: cosine similarity against your whole history matrix picks three style exemplars and six
+  recent posts, so the model sees how you actually sound. Stage six picks three <b>style arms</b> — a tone and
+  a structure per candidate — with Thompson sampling, two exploiting what you liked and one exploring."</div>
+  <div class="say">"Stage seven builds the prompt, and stage eight makes <b>one call</b> for
+  <b>six candidates</b>. One call, six candidates: that's deliberate — it's the cost-efficient way to have
+  something to choose from, and it keeps all six candidates comparable because they share a prompt."</div>
+  <div class="say">"Then the filter chain: hard constraints on length, banned words and emoji level, Jaccard
+  deduplication of opening lines, and embeddings. Features, scores, MMR for stylistic diversity,
+  Monte-Carlo confidence, and finally the explanation payload — which is what you actually see on screen."</div>
   <div class="stage"><b>Handoff — A:</b> "Now the maths. B."</div>
 </div>
 
@@ -176,36 +191,53 @@
   <h3>Scoring: s = F · w, then MMR, then confidence</h3>
   <div class="cue"><span>Mathematical core</span><span>7:30</span></div>
   <span class="who b">SPEAKER B</span>
-  <div class="say bline">"Each candidate is a row of six features: <b>relevance, tone, personalization,
-  novelty, length</b> and <b>history</b>. The score is a dot product — <b>s equals F times w</b> — with
-  default weights of point three, point two, point two, point one five, point one and point oh five."</div>
+  <div class="say bline">"Each candidate becomes a row of <b>six features</b>, each normalised to zero to one:
+  <b>relevance</b> — cosine between the candidate and the intent vector; <b>tone</b> — probability from our
+  softmax classifier; <b>personalisation</b> — dot product with your preference vector; <b>novelty</b> — one
+  minus the maximum cosine against your history; <b>length</b> — a z-score against what you usually write;
+  and <b>history</b> — a Beta estimate of how this style did before."</div>
+  <div class="say bline">"The score is a dot product, <b>s equals F times w</b>, with default weights of point
+  three, point two, point two, point one five, point one and point oh five. Those weights are not fixed: when
+  you reject something for being <i>too similar</i>, the novelty weight steps up. The update is a
+  <b>constrained gradient step</b> — learning rate point oh one, step size point oh oh five, bound eight —
+  projected back onto the simplex so the six weights always sum to one and never go negative."</div>
   <div class="say bline">"The score alone would give you three near-identical posts. So we add
   <b>MMR</b> — maximal marginal relevance — at lambda zero point seven, which trades relevance against
-  diversity. That's why candidate three is tagged <i>'exploring a new style'</i>."</div>
-  <div class="say bline">"Confidence comes from a <b>Dirichlet Monte-Carlo simulation</b>: two hundred
-  seeded draws, so the same inputs always give the same answer. For rates in the analytics we use
-  <b>Wilson intervals</b>, because a naive percentage lies when n is small."</div>
+  diversity, with a quota that prefers a style arm not yet represented. That's why candidate three is tagged
+  <i>'exploring a new style'</i>."</div>
+  <div class="say bline">"Confidence comes from a <b>Dirichlet Monte-Carlo simulation</b>: two hundred draws
+  from a Dirichlet distribution centred on your weights, giving the probability that each candidate is
+  rank one. It's seeded at forty-two, so the same inputs always give the same answer — that determinism is
+  what makes golden-value testing possible. For rates in analytics we use <b>Wilson intervals</b>, because a
+  naive percentage lies when n is small."</div>
   <div class="stage"><b>Handoff — B:</b> "Rather than describe the output, let's show it. A drives the demo."</div>
 </div>
 
 <h2 class="pb">Slide 8 — LIVE DEMO: review screen <span class="timing">7:30 – 9:30</span></h2>
 <div class="slide">
   <h3>Demo: three ranked candidates with score breakdowns</h3>
-  <div class="cue"><span>Live — localhost:3000</span><span>9:30</span></div>
+  <div class="cue"><span>Live — deployed site or localhost:3000</span><span>9:30</span></div>
   <span class="who a">SPEAKER A</span>
-  <div class="say">"This is the live app. The dashboard says <i>'November post ready for review — three
+  <div class="say">"This is the live app. The dashboard says <i>'December post ready for review — three
   candidates'</i>. That message came from the scheduler, not from a button press."</div>
   <div class="stage"><b>Click → Review candidates.</b></div>
-  <div class="say">"Here are the three. Each card shows a <b>score ring</b>, a <b>confidence band</b>,
-  word and character counts, and how similar it is to your history — twenty percent, thirty-five
-  percent, fifty-three percent. All three are marked <i>Fresh</i>, so we're not repeating ourselves."</div>
+  <div class="say">"First, provenance, because it's the honest answer to 'what made this?': <b>Provider:
+  Groq</b>, <b>Model: openai/gpt-oss-120b</b>, <b>Source: monthly schedule</b>, and when it ran. If a batch
+  ever came from the offline template engine instead, this line would say so and an amber banner would
+  explain why — the UI never labels template text as model output."</div>
+  <div class="say">"Below that is the brief the batch was actually built from — topic, audience, platform,
+  tones, scheduled date, keywords. Read from the database, not guessed from the candidates. Then the three
+  cards: a <b>score ring</b>, a <b>confidence band</b>, word and character counts, and how similar it is to
+  your history — twenty percent, thirty-five, fifty-three. All three marked <i>Fresh</i>, so we're not
+  repeating ourselves."</div>
   <div class="stage"><b>Click → Score breakdown on candidate 1.</b></div>
   <div class="say">"This is the transparency we promised. Six bars: relevance seventeen, tone thirteen,
-  personalization sixty-one, novelty eighty, length eighty-five, history sixty-seven. You can see
-  exactly which feature earned the top rank."</div>
-  <div class="say">"And this list on the left is the <b>why-ranked</b> explanation in plain English —
+  personalisation sixty-one, novelty eighty, length eighty-five, history sixty-seven. You can see exactly
+  which feature earned the top rank — and which one held it back."</div>
+  <div class="say">"And this list is the <b>why-ranked</b> explanation in plain English —
   <i>'fits your usual voice at sixty-one percent'</i> and <i>'twenty percent different from your nearest
   past post'</i> — with a link to the exact post it's being compared against."</div>
+  <div class="stage"><b>Optional if time allows: click Compare, then Embedding map; then Regenerate all and let the provider line update.</b></div>
   <div class="stage"><b>Handoff — A:</b> "Now watch what happens when we give feedback. B?"</div>
 </div>
 
@@ -218,12 +250,13 @@
   hundred OK, and the request refetches."</div>
   <div class="stage"><b>Click → 'Like this style', then point at the Recent activity feed on the dashboard.</b></div>
   <div class="say bline">"That single click updated four things at once. It moved the <b>preference
-  vector</b> with an exponential moving average. It updated the <b>Beta statistics</b> for that style arm,
-  so Thompson sampling will favour it next time. It nudged the <b>weight vector</b> with a constrained
-  gradient step. And it updated your <b>tone counts</b>."</div>
+  vector</b> with an exponential moving average toward that candidate's embedding. It updated the
+  <b>Beta statistics</b> for that style arm — the alpha went up — so Thompson sampling will favour it next
+  time. It nudged the <b>weight vector</b> with that constrained gradient step. And it updated your
+  <b>tone counts</b>."</div>
   <div class="say bline">"Reject does the same thing with a reason attached — if you reject for
-  <i>'too similar'</i>, the novelty weight goes up. That's the difference between a generator and a
-  system that learns."</div>
+  <i>'too similar'</i>, the novelty weight goes up; <i>'wrong tone'</i> pushes tone. That's the difference
+  between a generator and a system that learns."</div>
   <div class="stage"><b>Handoff — B:</b> "A shows where that shows up over time."</div>
 </div>
 
@@ -233,13 +266,16 @@
   <div class="cue"><span>Evaluation</span><span>11:45</span></div>
   <span class="who a">SPEAKER A</span>
   <div class="say">"Three dashboards. <b>Usage</b> — how many messages generated, time to approve.
-  <b>Content</b> — tone mix, topic distribution, novelty trend across months, and a repetition alert
-  that fires when two posts are more than eighty-five percent similar."</div>
-  <div class="say">"And <b>Quality</b> — selection rate with a Wilson confidence interval, top-one
-  agreement, mean reciprocal rank, and the correlation between score and what you actually chose."</div>
+  <b>Content</b> — tone mix, topic distribution, novelty trend across months, entropy of the topic
+  distribution, and a repetition alert that fires when two posts are more than eighty-five percent
+  similar."</div>
+  <div class="say">"And <b>Quality</b> — selection rate with a Wilson confidence interval, top-one agreement
+  between the rank-one candidate and what you actually chose, mean reciprocal rank, and the correlation
+  between score and choice. There's also a chi-square panel testing whether tone and selection are
+  independent."</div>
   <div class="say">"Right now: nine messages generated, twenty-two percent selection rate with a
-  ninety-five percent interval of six to fifty-five percent. The interval is wide because n is nine —
-  which is exactly why we show it."</div>
+  ninety-five percent interval of six to fifty-five percent. The interval is wide because n is nine — which
+  is exactly why we show it, instead of pretending a small sample is a result."</div>
   <div class="stage"><b>Handoff — A:</b> "B takes the technology summary."</div>
 </div>
 
@@ -248,31 +284,40 @@
   <h3>Technology stack</h3>
   <div class="cue"><span>Engineering choices</span><span>12:45</span></div>
   <span class="who b">SPEAKER B</span>
-  <div class="say bline">"<b>FastAPI</b> on Python 3.10 with Pydantic for validation, <b>SQLAlchemy 2</b>
-  over SQLite by default — swap one environment variable and it's PostgreSQL."</div>
-  <div class="say bline">"The AI engine is <b>pure NumPy and SciPy</b> — no GPU, no heavy framework. Our
-  own 384-dimensional embedding, our own preprocessing, our own logistic-regression tone classifier
-  trained on eight hundred labelled rows."</div>
-  <div class="say bline">"Generation sits behind an <b>adapter</b> — template, OpenAI, Anthropic or
-  Ollama — with retry, a circuit breaker and cost metering. The template engine is the default, so the
-  demo works offline with zero API cost."</div>
-  <div class="say bline">"On the front, <b>Next.js 14</b> with TypeScript, TanStack Query, React Hook
-  Form with Zod, and Recharts for the visualisations."</div>
+  <div class="say bline">"<b>FastAPI</b> on Python 3.10 with Pydantic 2 for validation and
+  <b>SQLAlchemy 2</b> over SQLite by default — one environment variable and it's PostgreSQL, which is the
+  deployment path we keep open."</div>
+  <div class="say bline">"Generation goes through an <b>adapter layer</b>: Groq, Gemini, OpenAI, Anthropic
+  and Ollama behind one interface, each with its own <b>circuit breaker</b>, retry with backoff, tolerant
+  JSON parsing and cost metering. The chain tries the primary provider, then any other configured hosted
+  provider. The <b>template engine</b> is the last resort, and only if the deployment explicitly opts in —
+  otherwise the request fails visibly rather than faking success."</div>
+  <div class="say bline">"The ranking engine is <b>pure NumPy and SciPy</b> — no GPU, no ML framework. Our own
+  384-dimensional embedder (sentence-transformer MiniLM in development, deterministic hashing in the deployed
+  build), our own preprocessing, our own softmax logistic-regression tone classifier trained on eight
+  hundred labelled rows. <b>Exa</b> web search can add live context to an occasion when a key is configured."</div>
+  <div class="say bline">"On the front, <b>Next.js 14</b> with TypeScript, TanStack Query, React Hook Form
+  with Zod, Recharts for the visualisations, Tailwind on our own design tokens. Deployment is
+  <b>Vercel for the frontend</b>, <b>Render for the API and the worker</b>, with <b>GitHub Actions</b>
+  running the test suite on every push."</div>
   <div class="stage"><b>Handoff — B:</b> "A on quality."</div>
 </div>
 
 <h2>Slide 12 — Quality &amp; testing <span class="timing">12:45 – 13:30</span></h2>
 <div class="slide">
-  <h3>Quality: 62 tests, including every golden value</h3>
+  <h3>Quality: 166 tests, including every golden value</h3>
   <div class="cue"><span>Verification</span><span>13:30</span></div>
   <span class="who a">SPEAKER A</span>
-  <div class="say">"Sixty-two tests, all passing. Thirty-five of them are <b>golden-value tests</b> —
-  we wrote down the expected number first, then made the code produce it. The gradient step lands on
-  exactly 0.161, the Wilson interval for three successes in ten trials is 0.108 to 0.603, and the MMR
-  picks candidates A, C and F."</div>
-  <div class="say">"Beyond that: twelve pipeline tests for the constraints, a full API journey test,
-  and four scheduler automation tests. Type-checking and the production build are clean, and the whole
-  thing runs in CI on Python 3.10 and 3.11."</div>
+  <div class="say">"A hundred and sixty-six tests, all passing. Thirty-five are <b>golden-value tests</b> —
+  we wrote the expected number down first, then made the code produce it. The gradient step lands on exactly
+  0.161, the Wilson interval for three successes in ten trials is 0.108 to 0.603, and MMR picks candidates
+  A, C and F."</div>
+  <div class="say">"The rest is behavioural: twenty-nine pipeline-behaviour tests, twenty-two occasion-gating
+  tests, nineteen date-and-cycle tests, twelve text-quality tests, a full API journey, six regeneration
+  tests, six webhook tests, six demo-account tests, four scheduler tests and three for the health endpoint."</div>
+  <div class="say">"Type-checking and the production build are clean, CI runs pytest on Python 3.10 and 3.11
+  plus the frontend build on Node 20, and we verify deployment from outside: the health endpoint reports the
+  <b>git commit</b> it is running, so we can prove which build is live instead of assuming."</div>
   <div class="stage"><b>Handoff — A:</b> "B finishes."</div>
 </div>
 
@@ -281,31 +326,85 @@
   <h3>Where it stands, and what's next</h3>
   <div class="cue"><span>Closing</span><span>14:00</span></div>
   <span class="who b">SPEAKER B</span>
-  <div class="say bline">"The MVP is <b>complete</b> — every row of the scope is built, tested and
-  running. The code is on GitHub, there's Docker Compose for the full stack, a CI pipeline, and a
-  nine-page technology document."</div>
-  <div class="say bline">"Next: deploying it live on Render with managed Postgres, connecting a hosted
-  language model so the copy is AI-written rather than template-written, and adding a browser
-  end-to-end test."</div>
+  <div class="say bline">"The MVP is <b>complete</b> — every row of the scope is built, tested and running.
+  The code is on GitHub, there's Docker Compose for the full stack, a CI pipeline, and the application is
+  <b>deployed</b>: frontend on Vercel, API and scheduler worker on Render, with the model provider
+  configured in production so candidates are AI-written rather than template-written."</div>
+  <div class="say bline">"Next: managed Postgres for durable data on the free tiers, a Playwright
+  end-to-end test in CI, smarter fallback telemetry so we notice provider degradation before a user does,
+  and the Version 2 items — platform publishing, engagement import, teams."</div>
   <span class="who a">SPEAKER A</span>
   <div class="say">"To leave you with the one idea: this isn't a text box with an API behind it. It's a
   system that prepares, explains itself, and gets measurably better every month you use it."</div>
   <div class="say"><b>"Thank you — we're happy to take questions."</b></div>
 </div>
 
+<h2 class="pb">Appendix A — Pipeline stage reference</h2>
+<div class="slide">
+  <h3>The fourteen stages, exactly as implemented (<code>app/ai/pipeline.py</code>)</h3>
+  <table>
+    <tr><th style="width:6%">#</th><th style="width:22%">Stage</th><th>What it does · key parameters</th></tr>
+    <tr><td>1</td><td>Validate</td><td>Normalises the brief, collects warnings; refuses malformed input before spending a model call</td></tr>
+    <tr><td>2</td><td>Context</td><td>Season and occasion resolved by the caller through the relevance + date gates; keyword extraction from topic, occasion and fact</td></tr>
+    <tr><td>3</td><td>Preprocess</td><td>Normalise, tokenise, lemma, coverage keywords for the hard constraints</td></tr>
+    <tr><td>4</td><td>Intent vector</td><td>384-d embedding of the brief text (topic, audience, purpose, tones, CTA, keywords)</td></tr>
+    <tr><td>5</td><td>Retrieval (RAG)</td><td>Cosine over the history matrix H: three style exemplars + six most recent posts</td></tr>
+    <tr><td>6</td><td>Style arms</td><td>Thompson sampling over tone × structure arms, Beta posteriors, 2 exploit + 1 explore</td></tr>
+    <tr><td>7</td><td>Prompt</td><td>System + user prompt carrying brief, arms, exemplars, recent posts, voice notes, banned words</td></tr>
+    <tr><td>8</td><td>Generate</td><td><b>One</b> provider call for six candidates; provider chain, breaker, retry; template only if opted in</td></tr>
+    <tr><td>9</td><td>Filter</td><td>Hard constraints: length per platform, banned words, emoji level, CTA, keyword coverage, near-duplicate history</td></tr>
+    <tr><td>10</td><td>Embed</td><td>384-d L2-normalised candidate embeddings; similarity matrices E·Eᵀ for dedupe and MMR</td></tr>
+    <tr><td>11</td><td>Features</td><td>Six-feature row F: relevance, tone, personalisation, novelty, length, history</td></tr>
+    <tr><td>12</td><td>Score</td><td>s = F·w with the user's current weight vector</td></tr>
+    <tr><td>13</td><td>Rank (MMR)</td><td>λ = 0.7 with style-arm quotas so the top three differ; trace records the order and the top-3-by-score it replaced</td></tr>
+    <tr><td>14</td><td>Confidence + explain</td><td>200-draw Dirichlet Monte-Carlo → P(rank 1) and band; plain-English reasons; PCA coordinates for the embedding map</td></tr>
+  </table>
+  <div class="note">
+  <b>Failure path:</b> if the provider returns nothing usable and the deployment has not opted into templates,
+  the request is marked <code>FAILED</code> with the reason stored on the request — the previous batch stays
+  intact and the UI says so. No silent substitution anywhere in the pipeline.
+  </div>
+</div>
+
+<h2>Appendix B — Algorithm reference (numbers you may be asked for)</h2>
+<div class="slide">
+  <h3>Every formula, its parameters, and why it is there</h3>
+  <table>
+    <tr><th style="width:22%">Algorithm</th><th style="width:30%">Definition</th><th>Parameters / notes</th></tr>
+    <tr><td>Embedding</td><td>384-d L2-normalised vector per text</td><td>MiniLM (<code>sentence-transformers</code>) in dev; 384-d feature hashing in the deployed build; stored as float32 BLOB</td></tr>
+    <tr><td>Cosine similarity</td><td>⟨a,b⟩ / (‖a‖‖b‖)</td><td>History retrieval, novelty, duplicate detection, embedding map</td></tr>
+    <tr><td>Feature vector</td><td>F = [relevance, tone, personalisation, novelty, length, history] ∈ [0,1]⁶</td><td>History feature is a Beta posterior mean; length is a clipped z-score against learned stats</td></tr>
+    <tr><td>Score</td><td>s = F · w</td><td>default w = (.30, .20, .20, .15, .10, .05)</td></tr>
+    <tr><td>Online weight update</td><td>w ← proj<sub>simplex</sub>(w + η·reward·∇)</td><td>η = 0.01, step bound β = 8, λ = 0.005; weights stay non-negative and sum to 1</td></tr>
+    <tr><td>Preference vector</td><td>u ← (1−α)·u + α·e<sub>chosen</sub></td><td>EMA over chosen/copied candidate embeddings; drives personalisation = ⟨e, u⟩</td></tr>
+    <tr><td>Thompson sampling</td><td>draw θ ~ Beta(α, β) per arm, pick top 3</td><td>Laplace-smoothed priors; 2 exploit + 1 explore per batch</td></tr>
+    <tr><td>MMR</td><td>argmax [λ·rel(d) − (1−λ)·max sim(d, selected)]</td><td>λ = 0.7, style-arm quota; greedy and exhaustive variants both tested</td></tr>
+    <tr><td>Confidence</td><td>P(rank 1) via 200 Dirichlet draws around w</td><td>seed 42; bands high / medium / low</td></tr>
+    <tr><td>Wilson interval</td><td>(p̂ + z²/2n ± z√(p̂(1−p̂)/n + z²/4n²)) / (1 + z²/n)</td><td>95% by default; used for selection rate and approval rate</td></tr>
+    <tr><td>Tone classifier</td><td>softmax(Wx + b), trained at startup</td><td>800 labelled rows, weights cached to <code>.npz</code>; probability feeds the tone feature</td></tr>
+    <tr><td>Deduplication</td><td>n-gram Jaccard > 0.8 → drop</td><td>Opening-line and full-text variants; seeded determinism</td></tr>
+    <tr><td>Analytics tests</td><td>χ² independence, Shannon entropy, MRR, top-1 agreement</td><td>Computed per user over their own history, with small-n caveats shown</td></tr>
+    <tr><td>Occasion gates</td><td>token-coverage relevance ≥ 0.5, or festive-intent bridge; plus date eligibility</td><td>Pure and clock-explicit: the caller passes today's date in the user's timezone</td></tr>
+  </table>
+</div>
+
 <h2 class="pb">Slide 14 — Q&amp;A preparation</h2>
 <p>Anticipated questions, with the suggested answer and who should take it.</p>
 <table>
   <tr><th style="width:26%">Question</th><th style="width:10%">Who</th><th>Suggested answer</th></tr>
-  <tr><td>Why is the generated text a bit awkward?</td><td>A</td><td>"The demo runs on the offline template engine so it costs nothing and works without keys. The OpenAI/Anthropic/Ollama adapters are built and tested — we add a key and the same six candidates come from a real model. Everything downstream — scoring, ranking, personalization — is identical."</td></tr>
-  <tr><td>Why not just use ChatGPT?</td><td>B</td><td>"A single model call gives you one answer with no ranking and no memory. We over-generate six, then filter, embed, score and diversify with our own engine — and every user action feeds back into next month's ranking. The model is one component, not the product."</td></tr>
+  <tr><td>Which model writes the candidates?</td><td>B</td><td>"Groq serving <code>openai/gpt-oss-120b</code> in production, behind an adapter that also supports Gemini, OpenAI, Anthropic and Ollama. Each provider has its own circuit breaker and model, so one provider's outage or quota doesn't take the system down."</td></tr>
+  <tr><td>What if the model is down or out of quota?</td><td>B</td><td>"The request fails visibly: status FAILED, the reason stored, the previous batch untouched. The offline template engine is still there as a last resort, but only when the deployment opts in with <code>MM_ALLOW_TEMPLATE_FALLBACK=true</code> — and when it is used, the review screen labels the batch as template-generated with an amber banner. We removed the silent substitution that used to hide failures."</td></tr>
+  <tr><td>Why not just use ChatGPT?</td><td>B</td><td>"A single model call gives you one answer with no ranking and no memory. We over-generate six from one call, then filter, embed, score and diversify with our own engine — and every user action feeds back into next month's ranking. The model is one component, not the product."</td></tr>
   <tr><td>How is this different from a prompt?</td><td>B</td><td>"A prompt has no state. Ours has a preference vector, Beta statistics per style arm, learned length stats and a weight vector that updates with a constrained gradient step — all visible in Settings."</td></tr>
-  <tr><td>Is it really automatic?</td><td>A</td><td>"Yes — APScheduler runs a daily scan, creates the cycle for the upcoming month, gathers the occasion context, generates, and notifies at T-3 and T-1 days. Preparation is idempotent, so a restart can't duplicate anything."</td></tr>
-  <tr><td>Why SQLite and not PostgreSQL?</td><td>A</td><td>"The target machine has no Docker or Postgres. The schema is portable — string enums, UTC-normalised timestamps, vectors as float32 blobs — so setting <code>MM_DATABASE_URL</code> to a managed Postgres is the only change. That's the deployment plan."</td></tr>
+  <tr><td>Is it really automatic?</td><td>A</td><td>"Yes — APScheduler runs a daily scan, creates the cycle for the upcoming month, gathers occasion context, generates, and notifies at T-3 and T-1 days. Preparation is idempotent, so a restart or a duplicate cron tick can't create two batches."</td></tr>
+  <tr><td>What does 'transparent' actually mean on screen?</td><td>A</td><td>"Three things: the provider and model that wrote the batch, the six-feature score breakdown per candidate, and plain-English reasons with a link to the nearest past post it was compared against. Plus provenance on the request itself — model, source, timestamp, fallback reason."</td></tr>
+  <tr><td>Why SQLite and not PostgreSQL?</td><td>A</td><td>"SQLite is the zero-setup default for development and for the free hosting tier. The schema is portable — string enums, UTC-normalised timestamps, vectors as float32 blobs — so pointing <code>MM_DATABASE_URL</code> at managed Postgres is the only change. That's the next deployment step."</td></tr>
   <tr><td>Isn't 22% selection rate low?</td><td>B</td><td>"n is nine, so the Wilson interval is six to fifty-five percent — too early to read as a quality signal. It's also counting 'left unselected' events. The metric exists precisely so we don't over-claim from small numbers."</td></tr>
-  <tr><td>How do you stop it repeating itself?</td><td>B</td><td>"Three ways: n-gram Jaccard deduplication at generation, cosine similarity against your full history with a novelty feature in the score, and MMR so the three shown are stylistically distinct. There's also a repetition alert in analytics at cosine 0.85."</td></tr>
-  <tr><td>What about privacy / API keys in the browser?</td><td>A</td><td>"The frontend only calls the public API and holds no secrets. Refresh tokens are httpOnly cookies; passwords are Argon2id. Secrets live in platform environment variables, never in the repository."</td></tr>
-  <tr><td>What's the hardest part you'd redo?</td><td>Either</td><td>"Getting the golden tests written first. Several real bugs — candidates never being embedded, a naive/aware datetime mix, MMR returning two candidates from the same style arm — were caught by those tests before they could reach the UI."</td></tr>
+  <tr><td>How do you stop it repeating itself?</td><td>B</td><td>"Three ways: n-gram Jaccard deduplication at generation, cosine similarity against your full history with a novelty feature in the score, and MMR with style-arm quotas so the three shown are stylistically distinct. There's also a repetition alert in analytics at cosine 0.85."</td></tr>
+  <tr><td>Why does a calendar occasion sometimes not appear?</td><td>A</td><td>"By design. An occasion existing in the calendar is not a reason to mention it. Two gates decide: semantic relevance between your objective and the occasion name — plus a narrow festive-intent bridge — and date eligibility. An unrelated post never gets a holiday bolted on."</td></tr>
+  <tr><td>What about privacy / API keys in the browser?</td><td>A</td><td>"The frontend only calls the public API and holds no secrets. Refresh tokens are httpOnly cookies; passwords are Argon2id. Provider keys live in platform environment variables, never in the repository or the browser."</td></tr>
+  <tr><td>How do you know what's deployed?</td><td>A</td><td>"The health endpoint reports the git commit it is running, taken from Render's environment, alongside provider, model, embedder and database status. That turned deployment verification from guesswork into one request."</td></tr>
+  <tr><td>What's the hardest part you'd redo?</td><td>Either</td><td>"Getting the golden tests written first. Several real bugs — candidates never being embedded, a naive/aware datetime mix, MMR returning two candidates from the same style arm, a silently substituted template batch — were caught before they could mislead anyone."</td></tr>
   <tr><td>Can it handle multiple users?</td><td>A</td><td>"Yes — every query is scoped to the authenticated user, there's per-user rate limiting, and the API is stateless so instances can be added behind a load balancer. The scheduler worker is separate and shares only the database."</td></tr>
 </table>
 
@@ -316,7 +415,7 @@
   <tr><td>2</td><td>The problem</td><td>A</td><td>1:30</td></tr>
   <tr><td>3</td><td>The goal</td><td>B</td><td>2:15</td></tr>
   <tr><td>4</td><td>User flow</td><td>A</td><td>3:15</td></tr>
-  <tr><td>5</td><td>Architecture</td><td>B</td><td>4:30</td></tr>
+  <tr><td>5</td><td>Architecture (deployed)</td><td>B</td><td>4:30</td></tr>
   <tr><td>6</td><td>AI pipeline (14 stages)</td><td>A</td><td>6:00</td></tr>
   <tr><td>7</td><td>The maths</td><td>B</td><td>7:30</td></tr>
   <tr><td>8</td><td><b>Demo — review screen</b></td><td>A</td><td>9:30</td></tr>
@@ -326,9 +425,12 @@
   <tr><td>12</td><td>Quality &amp; tests</td><td>A</td><td>13:30</td></tr>
   <tr><td>13</td><td>Live &amp; next steps</td><td>B then A</td><td>14:00</td></tr>
   <tr><td>14</td><td>Q&amp;A</td><td>both</td><td>—</td></tr>
+  <tr><td>A</td><td>Appendix — pipeline stages</td><td>either</td><td>backup</td></tr>
+  <tr><td>B</td><td>Appendix — algorithm reference</td><td>either</td><td>backup</td></tr>
 </table>
 
-<div class="footer">MonthlyMuse · Presentation script for two speakers · 14 slides · 14 minutes · based on the Project Progress Report</div>
+<div class="footer">MonthlyMuse · Presentation script for two speakers · 14 slides + 2 appendices · 14 minutes ·
+based on the November 2026 Progress Report</div>
 
 </body>
 </html>
