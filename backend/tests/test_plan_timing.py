@@ -15,7 +15,7 @@ from types import SimpleNamespace
 from sqlalchemy import select
 
 from app.db.session import SessionLocal
-from app.services.plan_service import (DEFAULT_LEAD_DAYS, compute_cycle_dates,
+from app.services.plan_service import (CYCLE_HORIZON, DEFAULT_LEAD_DAYS, compute_cycle_dates,
                                        effective_lead, ensure_cycles, preparation_at)
 
 
@@ -30,6 +30,17 @@ def test_post_15_october_prepares_8_october():
     post, prep = date(2026, 10, 15), date(2026, 10, 8)
     assert targets[post] == prep
     assert (post - prep).days == 7
+
+
+def test_explicit_start_date_is_independent_of_the_real_clock():
+    """A fixed anchor must keep its own month however much time has passed.
+
+    The suite used to fail from November onwards because the anchor month was
+    compared against the wall clock and silently dropped.
+    """
+    triples = compute_cycle_dates(_user(), 15, time(10, 0), 7, start_from=date(2026, 10, 1))
+    assert triples[0][0] == date(2026, 10, 1)      # the anchor month is always produced
+    assert len(triples) == CYCLE_HORIZON
 
 
 def test_every_cycle_is_exactly_lead_days_before_posting():

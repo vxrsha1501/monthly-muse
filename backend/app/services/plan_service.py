@@ -55,6 +55,11 @@ def compute_cycle_dates(user: User, post_day: int, post_time: time, lead_days: i
     """Next 12 (target_month, post_at, generate_at) triples, honouring IANA timezones."""
     now = datetime.now(timezone.utc)
     today = start_from or now.date()
+    # With an explicit anchor the comparison clock must be the anchor itself.
+    # Comparing a caller's fixed dates against the real clock dropped the
+    # anchor month as soon as wall-clock time moved past it (the October timing
+    # regression: an October anchor stopped producing 15 October in November).
+    reference = now if start_from is None else _local_to_utc(today, time(0, 0), user.timezone)
     out: list[tuple[date, datetime, datetime]] = []
     year, month = today.year, today.month
     for _ in range(CYCLE_HORIZON + 1):
@@ -64,9 +69,9 @@ def compute_cycle_dates(user: User, post_day: int, post_time: time, lead_days: i
         day = min(post_day, last_day)          # day 28+ clamps; 'last day' = 28 policy
         post_local_date = date(year, month, day)
         post_at = _local_to_utc(post_local_date, post_time, user.timezone)
-        # skip the current month only if its posting moment has already passed
-        current = (month == today.month and year == today.year)
-        if not (current and post_at <= now):
+        # skip a posting moment that has already passed (the first month only:
+        # iteration starts at the anchor month and every later one is future)
+        if post_at > reference:
             generate_at = preparation_at(post_at, lead_days)
             out.append((date(year, month, 1), post_at, generate_at))
         month += 1
