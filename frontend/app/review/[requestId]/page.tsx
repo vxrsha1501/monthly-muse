@@ -189,6 +189,9 @@ export default function ReviewPage() {
   }, [candidates]);
 
   const mapData = stage?.embedding_map;
+  // A template batch is a template batch even if an older API build does not
+  // send is_fallback: never label template text as LLM output.
+  const isTemplateBatch = stage?.is_fallback === true || stage?.provider === "template";
 
   /* ---------------- running state ---------------- */
   if (isLoading || !stage) {
@@ -250,7 +253,7 @@ export default function ReviewPage() {
               <span>Model: <span className="font-mono text-ink-2">{stage.model}</span></span>
             )}
             <span>Source: {SOURCE_LABELS[stage.source ?? ""] ?? stage.source ?? "unknown"}</span>
-            <span>Generation type: {stage.is_fallback ? "Template" : "LLM"}</span>
+            <span>Generation type: {isTemplateBatch ? "Template" : "LLM"}</span>
             {stage.created_at && <span>{new Date(stage.created_at).toLocaleString()}</span>}
             {stage.latency_ms ? <span>{stage.latency_ms}ms</span> : null}
             {stage.retrieval.n_history !== undefined
@@ -275,7 +278,7 @@ export default function ReviewPage() {
       </div>
 
       {/* provenance: a template batch is never presented as an LLM one */}
-      {(stage.is_fallback || stage.fallback_reason) && (
+      {(isTemplateBatch || stage.fallback_reason) && (
         <div className="rounded-card border border-amber-300 bg-amber-50 p-3 text-small text-amber-900">
           <strong>Template fallback.</strong> These candidates came from the offline template
           engine, not the configured LLM.
