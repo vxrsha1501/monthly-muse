@@ -199,8 +199,9 @@ is silently substituted. Say this plainly if someone asks — it is one of the p
   <div class="say bline">"The score is a dot product, <b>s equals F times w</b>, with default weights of point
   three, point two, point two, point one five, point one and point oh five. Those weights are not fixed: when
   you reject something for being <i>too similar</i>, the novelty weight steps up. The update is a
-  <b>constrained gradient step</b> — learning rate point oh one, step size point oh oh five, bound eight —
-  projected back onto the simplex so the six weights always sum to one and never go negative."</div>
+  <b>constrained gradient step</b> on a softmax choice model — inverse temperature eight, a
+  regularisation term of point oh oh five pulling back toward the default weights, learning rate point
+  oh one — projected onto the simplex so the six weights always sum to one and never go negative."</div>
   <div class="say bline">"The score alone would give you three near-identical posts. So we add
   <b>MMR</b> — maximal marginal relevance — at lambda zero point seven, which trades relevance against
   diversity, with a quota that prefers a style arm not yet represented. That's why candidate three is tagged

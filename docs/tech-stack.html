@@ -74,7 +74,7 @@
   <tr><td>Auth</td><td><b>Argon2id</b> (argon2-cffi) + <b>JWT</b> (PyJWT): 15-min access + 14-day refresh httpOnly cookie; signed ICS calendar token</td><td>Stateless, standard, secure when cookie flags are right (<code>None+Secure</code> in production)</td><td>Auth0 / Clerk / Supabase Auth</td></tr>
   <tr><td>Frontend</td><td><b>Next.js 14.2 App Router + TypeScript 5</b>, React 18</td><td>Industry standard, typed contracts, easy deploy, static + dynamic routes</td><td>React + Vite</td></tr>
   <tr><td>UI toolkit</td><td><b>Tailwind CSS 3.4</b> with Section-12 design tokens + own component library (<code>components/ui.tsx</code>)</td><td>Fast, polished, accessible; tokens (indigo primary, chart palette, text scale, shadows) implemented as Tailwind theme — shadcn/ui CLI dropped to keep the dependency tree auditable</td><td>Tailwind + shadcn/ui (MUI, Chakra)</td></tr>
-  <tr><td>Data fetching</td><td><b>TanStack Query 5</b></td><td>Caching, polling (generation status every 1.5 s), invalidation after feedback, error toasts</td><td>SWR</td></tr>
+  <tr><td>Data fetching</td><td><b>TanStack Query 5</b></td><td>Caching, polling (generation status every 1.2 s), invalidation after feedback, error toasts</td><td>SWR</td></tr>
   <tr><td>Forms</td><td><b>React Hook Form 7 + Zod 3</b> (<code>@hookform/resolvers</code>)</td><td>Schema-validated 3-step Create form with draft autosave</td><td>Formik</td></tr>
   <tr><td>Charts</td><td><b>Recharts 3</b></td><td>Declarative React charts incl. radar (compare mode), scatter (PCA embedding map), donut/bars/CI bars</td><td>Chart.js, Plotly</td></tr>
   <tr><td>Testing</td><td><b>pytest</b> (166 tests, 12 modules) · tsc + ESLint + <code>next build</code> for the frontend</td><td>Covers golden maths values, pipeline behaviour, occasion gating, plan timing, regeneration, webhooks, API journey, scheduler and the health endpoint</td><td>pytest, Playwright, Vitest/RTL</td></tr>
@@ -165,7 +165,7 @@ healthy today.
   └─ primary provider (MM_LLM_PROVIDER)      e.g. groq → openai/gpt-oss-120b
        ├─ 401/404/429 → Groq model fallback list (gpt-oss-20b, qwen3.8-27b)
        ├─ 429 quota / 5xx → LLMUnavailable → next configured hosted provider
-       └─ breaker open (5 fails / 60 s) → skip provider without a call
+       └─ breaker open (3 fails / 60 s) → skip provider without a call
   └─ every hosted provider failed
        ├─ MM_ALLOW_TEMPLATE_FALLBACK=true  → template engine, batch flagged is_fallback
        └─ otherwise                        → request FAILED, reason stored, previous batch kept</pre>
@@ -202,7 +202,7 @@ healthy today.
   <tr><th style="width:20%">Algorithm</th><th style="width:34%">Definition</th><th>Parameters / notes</th></tr>
   <tr><td>Feature extraction</td><td>relevance = cos(e, q); tone = softmax classifier P(tone); personalisation = ⟨e, u⟩; novelty = 1 − max cos(e, H); length = clipped z-score against learned stats; history = Beta posterior mean</td><td>Every feature mapped into [0,1] so the score is interpretable and weights are comparable</td></tr>
   <tr><td>Scoring</td><td>s = F · w</td><td>default w = (.30, .20, .20, .15, .10, .05), always non-negative and summing to 1</td></tr>
-  <tr><td>Constrained gradient step</td><td>w ← proj<sub>simplex</sub>(w + η · reward · ∇<sub>w</sub>)</td><td>η = 0.01, step bound β = 8, λ = 0.005; projection keeps the simplex constraint after every update</td></tr>
+  <tr><td>Constrained gradient step</td><td>w ← proj<sub>simplex</sub>(w + η · ∇<sub>w</sub>), ∇<sub>w</sub> = −β(f<sub>chosen</sub> − Σ<sub>k</sub> p<sub>k</sub>f<sub>k</sub>) + 2λ(w − w<sub>0</sub>)</td><td>Softmax choice model with inverse temperature β = 8, regularisation λ = 0.005 pulling back toward the default weights, learning rate η = 0.01; projection keeps w non-negative and summing to 1 after every update</td></tr>
   <tr><td>Preference vector</td><td>u ← (1 − α)·u + α·e<sub>chosen</sub></td><td>Exponential moving average over chosen/copied candidates; drives the personalisation feature</td></tr>
   <tr><td>Thompson sampling</td><td>θ<sub>arm</sub> ~ Beta(α, β); pick the top three draws</td><td>Laplace-smoothed priors per (tone, structure) arm; 2 exploit + 1 explore per batch</td></tr>
   <tr><td>MMR</td><td>argmax<sub>d</sub> [λ·rel(d) − (1 − λ)·max<sub>s∈S</sub> sim(d, s)]</td><td>λ = 0.7; greedy and exhaustive variants; style-arm quota prevents three variants of one style</td></tr>
@@ -220,7 +220,7 @@ healthy today.
 <ul>
   <li><b>Next.js 14.2 (App Router) + TypeScript 5</b> — 12 routes (10 product screens plus the root redirect and the review resolver); ~3.9k lines; client components only where interactivity demands it.</li>
   <li><b>Tailwind CSS 3.4</b> implements the Section 12 design system: indigo primary scale, 7-colour chart palette, type scale, radii, shadows, plus component classes (<code>card</code>, <code>btn</code>, <code>input</code>, <code>chip</code>, <code>badge</code>) and reduced-motion support.</li>
-  <li><b>TanStack Query 5</b> — one <code>http</code> wrapper (<code>lib/api.ts</code>) handles JSON, auth headers, silent refresh on 401 and typed errors; generation status polls every 1.5 s until done.</li>
+  <li><b>TanStack Query 5</b> — one <code>http</code> wrapper (<code>lib/api.ts</code>) handles JSON, auth headers, silent refresh on 401 and typed errors; generation status polls every 1.2 s until done.</li>
   <li><b>React Hook Form + Zod</b> — the 3-step Create form validates with a Zod schema shared by all steps and autosaves drafts.</li>
   <li><b>Inline SVG</b> for score rings and badges; <b>Recharts 3</b> for the radar (compare), scatter (embedding map), donut/bars/line/CI bars (analytics); <b>lucide-react</b> icons; <b>date-fns</b> formatting.</li>
   <li><b>Review screen</b> shows provenance (provider, model, source, timestamp), the saved brief, and a labelled banner when a batch came from the fallback engine. The candidate cards carry the score ring, confidence chip, similarity meter, why-ranked reasons, expandable feature bars, compare and embedding-map views, and select / edit / copy / like / dislike / reject / regenerate.</li>
@@ -242,7 +242,7 @@ healthy today.
   <li><b>16 tables</b> per blueprint Section 9 (listed in §2); portable string enums instead of native PG enums so SQLite and Postgres share one schema.</li>
   <li><b>UTC everywhere</b>: a custom <code>UTCDateTime</code> TypeDecorator normalises SQLite's naive datetimes back to aware UTC — no naive/aware mixing bugs.</li>
   <li><b>Vectors</b> as float32 BLOBs (<code>vec_to_blob/blob_to_vec</code>); cosine computed in NumPy — identical results on SQLite and Postgres, pgvector-ready for scale.</li>
-  <li><b>JSON columns</b> where the blueprint allows them: per-request stage trace, 32-feature breakdowns, tone counts, the saved brief and provenance.</li>
+  <li><b>JSON columns</b> where the blueprint allows them: per-request stage trace, six-feature score breakdowns, tone counts, the saved brief and provenance.</li>
   <li><b>Portability</b>: <code>psycopg[binary]</code> is a first-class dependency and plain <code>postgresql://</code> URLs are normalised to <code>postgresql+psycopg://</code> with TLS, so managed Postgres is a configuration change.</li>
 </ul>
 
